@@ -20,7 +20,7 @@ void main() {
     // loads a finished game, disable cloud eval because it is usually not available in mid/end game
     await makeEngineTestApp(tester, isCloudEvalEnabled: false, gameId: const GameId('xze7RH66'));
 
-    expect(find.byType(CircularProgressIndicator), findsOne);
+    expect(find.text('Loading…'), findsOne);
     // wait for the game to be loaded
     await tester.pump(const Duration(milliseconds: 50));
 
