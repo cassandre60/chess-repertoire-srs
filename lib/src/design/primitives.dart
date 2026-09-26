@@ -317,6 +317,24 @@ class SrsSwitch extends StatelessWidget {
 }
 
 // ---------------------------------------------------------------------------
+// SrsRowRule — vertical hairline separating groups inside a horizontal control row
+// ---------------------------------------------------------------------------
+class SrsRowRule extends StatelessWidget {
+  const SrsRowRule({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.srs;
+    return Container(
+      width: 1,
+      height: 20,
+      margin: const EdgeInsets.symmetric(horizontal: 10),
+      color: c.hairline,
+    );
+  }
+}
+
+// ---------------------------------------------------------------------------
 // SrsAccentDots — accent colour picker
 // ---------------------------------------------------------------------------
 class SrsAccentDots extends StatelessWidget {

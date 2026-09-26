@@ -104,15 +104,18 @@ class _AnalysisScreenState extends ConsumerState<_AnalysisScreen> {
                   : VariantAppBarTitle(variant: value.variant, title: context.l10n.analysis));
 
         // Quiet scene-title line under the header (demo meta treatment).
-        // The full title widget is preserved when there is no plain name.
-        final Widget titleLine = displayTitle != null
+        //
+        // Only rendered when it says something the header does not. A bare "Analysis" for a
+        // standalone board is just the screen's own name, and on a phone it costs a line of
+        // vertical space the moves tree and the charts need.
+        final Widget? titleLine = displayTitle != null
             ? Text(
                 displayTitle,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: SrsText.meta(c.ink2),
               )
-            : appBarTitle;
+            : (value.archivedGame != null ? appBarTitle : null);
 
         return WakelockWidget(
           child: Scaffold(
@@ -126,13 +129,14 @@ class _AnalysisScreenState extends ConsumerState<_AnalysisScreen> {
                     onBack: () => Navigator.of(context).pop(),
                     trailing: _AnalysisMenu(options: widget.options),
                   ),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Padding(
-                      padding: const EdgeInsets.fromLTRB(24, 2, 24, 8),
-                      child: titleLine,
+                  if (titleLine != null)
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: Padding(
+                        padding: const EdgeInsets.fromLTRB(24, 2, 24, 8),
+                        child: titleLine,
+                      ),
                     ),
-                  ),
                   Expanded(
                     child: _TabbedBody(
                       options: widget.options,
@@ -477,105 +481,96 @@ class _BottomBar extends ConsumerWidget {
     final c = context.srs;
     final notifier = ref.read(ctrlProvider.notifier);
 
-    Widget? engineRow;
+    Widget? engineControls;
     if (analysisState.isComputerAnalysisAllowed) {
       final filters = (context: analysisState.evaluationContext, path: analysisState.currentPath);
       final EngineEvaluationState(:isComputing, currentWork: work) = ref.watch(
         engineEvaluationProvider(filters),
       );
       final canGoDeeper = !isComputing && (work == null || work.isDeeper != true);
-      engineRow = Padding(
-        padding: const EdgeInsets.fromLTRB(20, 8, 20, 0),
-        child: Row(
-          children: [
-            Text('Engine', style: SrsText.settingLabel(c.ink)),
-            const SizedBox(width: 10),
-            Builder(
-              builder: (context) {
-                Future<void>? toggleFuture;
-                return FutureBuilder(
-                  future: toggleFuture,
-                  builder: (context, snapshot) {
-                    return EngineButton(
-                      filters: filters,
-                      savedEval: analysisState.currentNode.eval,
-                      onTap:
-                          analysisState.isEngineAllowed &&
-                              snapshot.connectionState != ConnectionState.waiting
-                          ? () async {
-                              toggleFuture = ref.read(ctrlProvider.notifier).toggleEngine();
-                              try {
-                                await toggleFuture;
-                              } finally {
-                                toggleFuture = null;
-                              }
+      engineControls = Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text('Engine', style: SrsText.settingLabel(c.ink)),
+          const SizedBox(width: 10),
+          Builder(
+            builder: (context) {
+              Future<void>? toggleFuture;
+              return FutureBuilder(
+                future: toggleFuture,
+                builder: (context, snapshot) {
+                  return EngineButton(
+                    filters: filters,
+                    savedEval: analysisState.currentNode.eval,
+                    onTap:
+                        analysisState.isEngineAllowed &&
+                            snapshot.connectionState != ConnectionState.waiting
+                        ? () async {
+                            toggleFuture = ref.read(ctrlProvider.notifier).toggleEngine();
+                            try {
+                              await toggleFuture;
+                            } finally {
+                              toggleFuture = null;
                             }
-                          : null,
-                      goDeeper: () => ref.read(ctrlProvider.notifier).requestEval(goDeeper: true),
-                    );
-                  },
-                );
-              },
+                          }
+                        : null,
+                    goDeeper: () => ref.read(ctrlProvider.notifier).requestEval(goDeeper: true),
+                  );
+                },
+              );
+            },
+          ),
+          if (canGoDeeper)
+            SrsTextButton(
+              label: context.l10n.goDeeper,
+              onPressed: () => notifier.requestEval(goDeeper: true),
             ),
-            const Spacer(),
-            if (canGoDeeper)
-              SrsTextButton(
-                label: context.l10n.goDeeper,
-                onPressed: () => notifier.requestEval(goDeeper: true),
-              ),
-            SrsSwitch(
-              value: evalPrefs.isEnabled,
-              semanticLabel: context.l10n.toggleLocalEvaluation,
-              onChanged: analysisState.isEngineAllowed
-                  ? (_) => unawaited(notifier.toggleEngine())
-                  : null,
-            ),
-          ],
-        ),
+          SrsSwitch(
+            value: evalPrefs.isEnabled,
+            semanticLabel: context.l10n.toggleLocalEvaluation,
+            onChanged: analysisState.isEngineAllowed
+                ? (_) => unawaited(notifier.toggleEngine())
+                : null,
+          ),
+        ],
       );
     }
 
-    // Diagram actions replacing the legacy bottom bar: same features,
-    // plain text buttons. Menu/Flip/Back/Forward all survive the move.
-    return Column(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        ?engineRow,
-        Padding(
-          padding: const EdgeInsets.fromLTRB(8, 2, 8, 8),
-          child: Wrap(
-            spacing: 14,
-            runSpacing: 6,
-            children: [
-              RepeatButton(
-                onLongPress: analysisState.canGoBack
-                    ? () => _moveBackward(ref, fastSeek: true)
-                    : null,
-                child: SrsTextButton(
-                  key: const ValueKey('goto-previous'),
-                  label: 'Back',
-                  onPressed: analysisState.canGoBack ? () => _moveBackward(ref) : null,
-                ),
-              ),
-              RepeatButton(
-                onLongPress: analysisState.canGoNext
-                    ? () => _moveForward(ref, fastSeek: true)
-                    : null,
-                child: SrsTextButton(
-                  key: const ValueKey('goto-next'),
-                  label: 'Forward',
-                  onPressed: analysisState.canGoNext ? () => _moveForward(ref) : null,
-                ),
-              ),
-              SrsTextButton(
-                label: context.l10n.menu,
-                onPressed: () => _showAnalysisMenu(context, ref),
-              ),
-              SrsTextButton(label: context.l10n.flipBoard, onPressed: () => notifier.toggleBoard()),
-            ],
+    // Diagram actions replacing the legacy bottom bar: same features as the old icon bar, as plain
+    // text buttons. Menu/Flip/Back/Forward all survive the move, and the engine controls join them.
+    //
+    // `Wrap`, never a horizontal scroll: design/docs/04-screens-and-flows.md §6 requires that
+    // nothing requires horizontal scrolling at any supported width. Controls reflow onto a second
+    // line instead of hiding behind a scroll gesture.
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(8, 0, 8, 6),
+      child: Wrap(
+        spacing: 10,
+        runSpacing: 0,
+        crossAxisAlignment: WrapCrossAlignment.center,
+        children: [
+          RepeatButton(
+            onLongPress: analysisState.canGoBack ? () => _moveBackward(ref, fastSeek: true) : null,
+            child: SrsTextButton(
+              key: const ValueKey('goto-previous'),
+              label: 'Back',
+              onPressed: analysisState.canGoBack ? () => _moveBackward(ref) : null,
+            ),
           ),
-        ),
-      ],
+          RepeatButton(
+            onLongPress: analysisState.canGoNext ? () => _moveForward(ref, fastSeek: true) : null,
+            child: SrsTextButton(
+              key: const ValueKey('goto-next'),
+              label: 'Forward',
+              onPressed: analysisState.canGoNext ? () => _moveForward(ref) : null,
+            ),
+          ),
+          if (engineControls != null) ...[const SrsRowRule(), engineControls],
+          const SrsRowRule(),
+          SrsTextButton(label: context.l10n.menu, onPressed: () => _showAnalysisMenu(context, ref)),
+          SrsTextButton(label: context.l10n.flipBoard, onPressed: () => notifier.toggleBoard()),
+        ],
+      ),
     );
   }
 
