@@ -430,12 +430,15 @@ class _BottomBar extends ConsumerWidget {
           ),
           SrsTextButton(
             key: const Key('flip-button'),
-            label: context.l10n.flipBoard,
+            // Diagram's terse row labels, not the tooltip-length l10n strings. "Flip board" and
+            // "Analysis board" are 174px and 234px wide at 15px, which is what pushed this row
+            // onto three lines on a 390px phone and cost the board its height.
+            label: 'Flip',
             onPressed: ref.read(boardEditorControllerProvider(params).notifier).flipBoard,
           ),
           SrsTextButton(
             key: const Key('analysis-board-button'),
-            label: context.l10n.analysis,
+            label: 'Analyse',
             // The evaluator uses Fairy-Stockfish for nonstandard material.
             onPressed: editorState.pgn != null && pieceCount > 0
                 ? () {

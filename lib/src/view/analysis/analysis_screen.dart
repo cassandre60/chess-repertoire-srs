@@ -481,59 +481,60 @@ class _BottomBar extends ConsumerWidget {
     final c = context.srs;
     final notifier = ref.read(ctrlProvider.notifier);
 
-    Widget? engineControls;
+    // Engine controls as individual wrap items rather than one atomic Row: inside a `Wrap` an
+    // atomic child that does not fit the remaining space claims a whole line by itself, which is
+    // how this row ended up three lines tall.
+    final engineControls = <Widget>[];
     if (analysisState.isComputerAnalysisAllowed) {
       final filters = (context: analysisState.evaluationContext, path: analysisState.currentPath);
       final EngineEvaluationState(:isComputing, currentWork: work) = ref.watch(
         engineEvaluationProvider(filters),
       );
       final canGoDeeper = !isComputing && (work == null || work.isDeeper != true);
-      engineControls = Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          Text('Engine', style: SrsText.settingLabel(c.ink)),
-          const SizedBox(width: 10),
-          Builder(
-            builder: (context) {
-              Future<void>? toggleFuture;
-              return FutureBuilder(
-                future: toggleFuture,
-                builder: (context, snapshot) {
-                  return EngineButton(
-                    filters: filters,
-                    savedEval: analysisState.currentNode.eval,
-                    onTap:
-                        analysisState.isEngineAllowed &&
-                            snapshot.connectionState != ConnectionState.waiting
-                        ? () async {
-                            toggleFuture = ref.read(ctrlProvider.notifier).toggleEngine();
-                            try {
-                              await toggleFuture;
-                            } finally {
-                              toggleFuture = null;
-                            }
+      engineControls.addAll([
+        const SrsRowRule(),
+        Text('Engine', style: SrsText.settingLabel(c.ink)),
+        Builder(
+          builder: (context) {
+            Future<void>? toggleFuture;
+            return FutureBuilder(
+              future: toggleFuture,
+              builder: (context, snapshot) {
+                return EngineButton(
+                  filters: filters,
+                  savedEval: analysisState.currentNode.eval,
+                  onTap:
+                      analysisState.isEngineAllowed &&
+                          snapshot.connectionState != ConnectionState.waiting
+                      ? () async {
+                          toggleFuture = ref.read(ctrlProvider.notifier).toggleEngine();
+                          try {
+                            await toggleFuture;
+                          } finally {
+                            toggleFuture = null;
                           }
-                        : null,
-                    goDeeper: () => ref.read(ctrlProvider.notifier).requestEval(goDeeper: true),
-                  );
-                },
-              );
-            },
+                        }
+                      : null,
+                  goDeeper: () => ref.read(ctrlProvider.notifier).requestEval(goDeeper: true),
+                );
+              },
+            );
+          },
+        ),
+        if (canGoDeeper)
+          SrsTextButton(
+            // Terse row label; "Go deeper" is 159px at 15px and pushed the row to a third line.
+            label: 'Deeper',
+            onPressed: () => notifier.requestEval(goDeeper: true),
           ),
-          if (canGoDeeper)
-            SrsTextButton(
-              label: context.l10n.goDeeper,
-              onPressed: () => notifier.requestEval(goDeeper: true),
-            ),
-          SrsSwitch(
-            value: evalPrefs.isEnabled,
-            semanticLabel: context.l10n.toggleLocalEvaluation,
-            onChanged: analysisState.isEngineAllowed
-                ? (_) => unawaited(notifier.toggleEngine())
-                : null,
-          ),
-        ],
-      );
+        SrsSwitch(
+          value: evalPrefs.isEnabled,
+          semanticLabel: context.l10n.toggleLocalEvaluation,
+          onChanged: analysisState.isEngineAllowed
+              ? (_) => unawaited(notifier.toggleEngine())
+              : null,
+        ),
+      ]);
     }
 
     // Diagram actions replacing the legacy bottom bar: same features as the old icon bar, as plain
@@ -565,10 +566,12 @@ class _BottomBar extends ConsumerWidget {
               onPressed: analysisState.canGoNext ? () => _moveForward(ref) : null,
             ),
           ),
-          if (engineControls != null) ...[const SrsRowRule(), engineControls],
-          const SrsRowRule(),
-          SrsTextButton(label: context.l10n.menu, onPressed: () => _showAnalysisMenu(context, ref)),
-          SrsTextButton(label: context.l10n.flipBoard, onPressed: () => notifier.toggleBoard()),
+          ...engineControls,
+          // The engine group already opens with a rule, so a second one here would only cost
+          // 31px. With no engine group there is nothing to separate, so it gets the rule instead.
+          if (engineControls.isEmpty) const SrsRowRule(),
+          SrsTextButton(label: 'Menu', onPressed: () => _showAnalysisMenu(context, ref)),
+          SrsTextButton(label: 'Flip', onPressed: () => notifier.toggleBoard()),
         ],
       ),
     );
