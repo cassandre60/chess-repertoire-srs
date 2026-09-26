@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:app_links/app_links.dart';
 import 'package:chess_srs/l10n/l10n.dart';
 import 'package:chess_srs/src/app_links_service.dart';
+import 'package:chess_srs/src/design/tokens.dart';
 import 'package:chess_srs/src/model/common/id.dart';
 import 'package:chess_srs/src/model/game/game.dart';
 import 'package:chess_srs/src/model/game/game_repository.dart';
@@ -486,10 +487,23 @@ void main() {
             return service;
           }),
         },
-        child: MaterialApp(
-          navigatorKey: navigatorKey,
-          localizationsDelegates: AppLocalizations.localizationsDelegates,
-          home: const _ColdStartLauncher(),
+        // SrsTheme, because this test builds its own tree instead of going through
+        // makeTestProviderScopeApp, which is the helper that supplies it. The deep link navigates
+        // to BoardEditorScreen, which resolves its colours through SrsContext and asserts the
+        // theme is there. Without the wrapper the build throws, navigation swallows it, and the
+        // failure surfaces two assertions later as a missing "Invalid FEN" snackbar -- which reads
+        // like a deep link problem and is not one.
+        //
+        // The same fix is on feat/explorer-results (#23). It cannot go on main: main's
+        // BoardEditorScreen does not require a theme, so the wrapper would be inert there and
+        // would hide the day main does require one.
+        child: SrsTheme(
+          colors: SrsColors.forBrightness(Brightness.light, kSrsDefaultAccent),
+          child: MaterialApp(
+            navigatorKey: navigatorKey,
+            localizationsDelegates: AppLocalizations.localizationsDelegates,
+            home: const _ColdStartLauncher(),
+          ),
         ),
       );
       await tester.pumpWidget(app);
