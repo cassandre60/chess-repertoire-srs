@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:chess_srs/src/constants.dart';
+import 'package:chess_srs/src/design/board_background.dart';
+import 'package:chess_srs/src/design/tokens.dart';
 import 'package:chess_srs/src/model/common/chess.dart';
 import 'package:chess_srs/src/model/game/game_board_params.dart';
 import 'package:chess_srs/src/model/settings/board_preferences.dart';
@@ -26,22 +28,25 @@ void main() {
       final app = await makeTestProviderScope(
         key: ValueKey(surface),
         tester,
-        child: const MaterialApp(
-          home: GameLayout(
-            orientation: Side.white,
-            boardParams: GameBoardParams.readonly(
-              variant: Variant.standard,
-              position: Chess.initial,
-            ),
-            topTable: Row(
-              mainAxisSize: MainAxisSize.max,
-              key: ValueKey('top_table'),
-              children: [Text('Top table')],
-            ),
-            bottomTable: Row(
-              mainAxisSize: MainAxisSize.max,
-              key: ValueKey('bottom_table'),
-              children: [Text('Bottom table')],
+        child: SrsTheme(
+          colors: SrsColors.forBrightness(Brightness.light, kSrsDefaultAccent),
+          child: const MaterialApp(
+            home: GameLayout(
+              orientation: Side.white,
+              boardParams: GameBoardParams.readonly(
+                variant: Variant.standard,
+                position: Chess.initial,
+              ),
+              topTable: Row(
+                mainAxisSize: MainAxisSize.max,
+                key: ValueKey('top_table'),
+                children: [Text('Top table')],
+              ),
+              bottomTable: Row(
+                mainAxisSize: MainAxisSize.max,
+                key: ValueKey('bottom_table'),
+                children: [Text('Bottom table')],
+              ),
             ),
           ),
         ),
@@ -49,7 +54,13 @@ void main() {
       );
       await tester.pumpWidget(app);
 
-      final backgroundSize = tester.getSize(find.byType(SolidColorChessboardBackground));
+      // SrsBoardBackground, not SolidColorChessboardBackground: the board has two paths, and
+      // which one it takes depends on whether an SrsTheme is in scope. Without a theme it falls
+      // back to the legacy colour-palette background, so asserting on that widget was asserting
+      // on a path no themed user ever reaches. Now that this file supplies the theme -- which it
+      // must, since the restyled widgets under test resolve colours through SrsContext and throw
+      // without it -- the board takes the themed path, and this is the background that renders.
+      final backgroundSize = tester.getSize(find.byType(SrsBoardBackground));
 
       expect(
         backgroundSize.width,
@@ -75,23 +86,26 @@ void main() {
       final app = await makeTestProviderScope(
         key: ValueKey(boardPosition),
         tester,
-        child: const MaterialApp(
-          home: GameLayout(
-            orientation: Side.white,
-            boardParams: GameBoardParams.readonly(
-              variant: Variant.standard,
-              position: Chess.initial,
-            ),
-            moves: ['e4', 'e5'],
-            topTable: Row(
-              mainAxisSize: MainAxisSize.max,
-              key: ValueKey('top_table'),
-              children: [Text('Top table')],
-            ),
-            bottomTable: Row(
-              mainAxisSize: MainAxisSize.max,
-              key: ValueKey('bottom_table'),
-              children: [Text('Bottom table')],
+        child: SrsTheme(
+          colors: SrsColors.forBrightness(Brightness.light, kSrsDefaultAccent),
+          child: const MaterialApp(
+            home: GameLayout(
+              orientation: Side.white,
+              boardParams: GameBoardParams.readonly(
+                variant: Variant.standard,
+                position: Chess.initial,
+              ),
+              moves: ['e4', 'e5'],
+              topTable: Row(
+                mainAxisSize: MainAxisSize.max,
+                key: ValueKey('top_table'),
+                children: [Text('Top table')],
+              ),
+              bottomTable: Row(
+                mainAxisSize: MainAxisSize.max,
+                key: ValueKey('bottom_table'),
+                children: [Text('Bottom table')],
+              ),
             ),
           ),
         ),
@@ -123,22 +137,25 @@ void main() {
       final app = await makeTestProviderScope(
         key: ValueKey(surface),
         tester,
-        child: const MaterialApp(
-          home: GameLayout(
-            orientation: Side.white,
-            boardParams: GameBoardParams.readonly(
-              variant: Variant.standard,
-              position: Chess.initial,
-            ),
-            topTable: Row(
-              mainAxisSize: MainAxisSize.max,
-              key: ValueKey('top_table'),
-              children: [Text('Top table')],
-            ),
-            bottomTable: Row(
-              mainAxisSize: MainAxisSize.max,
-              key: ValueKey('bottom_table'),
-              children: [Text('Bottom table')],
+        child: SrsTheme(
+          colors: SrsColors.forBrightness(Brightness.light, kSrsDefaultAccent),
+          child: const MaterialApp(
+            home: GameLayout(
+              orientation: Side.white,
+              boardParams: GameBoardParams.readonly(
+                variant: Variant.standard,
+                position: Chess.initial,
+              ),
+              topTable: Row(
+                mainAxisSize: MainAxisSize.max,
+                key: ValueKey('top_table'),
+                children: [Text('Top table')],
+              ),
+              bottomTable: Row(
+                mainAxisSize: MainAxisSize.max,
+                key: ValueKey('bottom_table'),
+                children: [Text('Bottom table')],
+              ),
             ),
           ),
         ),
@@ -267,10 +284,14 @@ void main() {
 
     final app = await makeTestProviderScope(
       tester,
-      child: MaterialApp(
-        home: ValueListenableBuilder<GameBoardParams>(
-          valueListenable: paramsNotifier,
-          builder: (context, params, _) => GameLayout(orientation: Side.white, boardParams: params),
+      child: SrsTheme(
+        colors: SrsColors.forBrightness(Brightness.light, kSrsDefaultAccent),
+        child: MaterialApp(
+          home: ValueListenableBuilder<GameBoardParams>(
+            valueListenable: paramsNotifier,
+            builder: (context, params, _) =>
+                GameLayout(orientation: Side.white, boardParams: params),
+          ),
         ),
       ),
     );
@@ -302,18 +323,21 @@ void main() {
     final playedMoves = <Move>[];
     final app = await makeTestProviderScope(
       tester,
-      child: MaterialApp(
-        home: GameLayout(
-          orientation: Side.white,
-          boardParams: GameBoardParams.interactive(
-            variant: Variant.crazyhouse,
-            position: Crazyhouse.fromSetup(
-              Setup.parseFen('rnb1kbnr/ppp1pppp/8/3q4/8/8/PPPP1PPP/RNBQKBNR[Pp] w KQkq - 0 3'),
+      child: SrsTheme(
+        colors: SrsColors.forBrightness(Brightness.light, kSrsDefaultAccent),
+        child: MaterialApp(
+          home: GameLayout(
+            orientation: Side.white,
+            boardParams: GameBoardParams.interactive(
+              variant: Variant.crazyhouse,
+              position: Crazyhouse.fromSetup(
+                Setup.parseFen('rnb1kbnr/ppp1pppp/8/3q4/8/8/PPPP1PPP/RNBQKBNR[Pp] w KQkq - 0 3'),
+              ),
+              playerSide: PlayerSide.white,
+              onMove: (move, {viaDragAndDrop}) {
+                playedMoves.add(move);
+              },
             ),
-            playerSide: PlayerSide.white,
-            onMove: (move, {viaDragAndDrop}) {
-              playedMoves.add(move);
-            },
           ),
         ),
       ),
@@ -341,15 +365,18 @@ void main() {
 
     final app = await makeTestProviderScope(
       tester,
-      child: MaterialApp(
-        home: ValueListenableBuilder<({Position position, Move? lastMove})>(
-          valueListenable: boardNotifier,
-          builder: (context, value, _) => GameLayout(
-            orientation: Side.white,
-            boardParams: GameBoardParams.readonly(
-              variant: Variant.standard,
-              position: value.position,
-              lastMove: value.lastMove,
+      child: SrsTheme(
+        colors: SrsColors.forBrightness(Brightness.light, kSrsDefaultAccent),
+        child: MaterialApp(
+          home: ValueListenableBuilder<({Position position, Move? lastMove})>(
+            valueListenable: boardNotifier,
+            builder: (context, value, _) => GameLayout(
+              orientation: Side.white,
+              boardParams: GameBoardParams.readonly(
+                variant: Variant.standard,
+                position: value.position,
+                lastMove: value.lastMove,
+              ),
             ),
           ),
         ),
@@ -384,16 +411,19 @@ void main() {
 
     final app = await makeTestProviderScope(
       tester,
-      child: MaterialApp(
-        home: ValueListenableBuilder<PlayerSide>(
-          valueListenable: sideNotifier,
-          builder: (context, playerSide, _) => GameLayout(
-            orientation: Side.white,
-            boardParams: GameBoardParams.interactive(
-              variant: Variant.standard,
-              position: Chess.initial,
-              playerSide: playerSide,
-              onMove: noopOnMove,
+      child: SrsTheme(
+        colors: SrsColors.forBrightness(Brightness.light, kSrsDefaultAccent),
+        child: MaterialApp(
+          home: ValueListenableBuilder<PlayerSide>(
+            valueListenable: sideNotifier,
+            builder: (context, playerSide, _) => GameLayout(
+              orientation: Side.white,
+              boardParams: GameBoardParams.interactive(
+                variant: Variant.standard,
+                position: Chess.initial,
+                playerSide: playerSide,
+                onMove: noopOnMove,
+              ),
             ),
           ),
         ),
@@ -433,19 +463,22 @@ void main() {
 
     final app = await makeTestProviderScope(
       tester,
-      child: MaterialApp(
-        home: ValueListenableBuilder<bool>(
-          valueListenable: showBoard,
-          builder: (context, show, _) => show
-              ? GameLayout(
-                  orientation: Side.white,
-                  controllerParams: ControllerBoardParams(
-                    controller: controller,
-                    variant: Variant.standard,
-                    onMove: (move, {viaDragAndDrop}) => playedMoves.add(move),
-                  ),
-                )
-              : const SizedBox.shrink(),
+      child: SrsTheme(
+        colors: SrsColors.forBrightness(Brightness.light, kSrsDefaultAccent),
+        child: MaterialApp(
+          home: ValueListenableBuilder<bool>(
+            valueListenable: showBoard,
+            builder: (context, show, _) => show
+                ? GameLayout(
+                    orientation: Side.white,
+                    controllerParams: ControllerBoardParams(
+                      controller: controller,
+                      variant: Variant.standard,
+                      onMove: (move, {viaDragAndDrop}) => playedMoves.add(move),
+                    ),
+                  )
+                : const SizedBox.shrink(),
+          ),
         ),
       ),
     );
