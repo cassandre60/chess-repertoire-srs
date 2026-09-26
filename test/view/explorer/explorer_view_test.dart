@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:chess_srs/src/constants.dart';
+import 'package:chess_srs/src/design/primitives.dart';
 import 'package:chess_srs/src/model/account/account_preferences.dart';
 import 'package:chess_srs/src/model/auth/auth_controller.dart';
 import 'package:chess_srs/src/model/common/id.dart';
@@ -275,7 +276,10 @@ void main() {
       await tester.pump();
 
       expect(find.byType(OpeningExplorerView), findsOneWidget);
-      expect(find.widgetWithText(TableRowInkWell, 'e4'), findsOneWidget);
+      // An SrsPressable, not a TableRowInkWell: the move table stopped being a DataTable row when
+      // it was restyled, and rows are built from the SrsPressable primitive now. The assertion
+      // still means what it meant -- the e4 row is there and it is pressable.
+      expect(find.widgetWithText(SrsPressable, 'e4'), findsOneWidget);
       expect(
         find.text('A free Lichess account is required to query the online opening database.'),
         findsNothing,
@@ -423,6 +427,18 @@ void main() {
         await tester.pumpWidget(app);
         await tester.pump();
 
+        // KNOWN FAILURE IN LETTER NOTATION, and the test is right to fail.
+        //
+        // moveSan routes letter notation through SrsSan, and SrsSan unconditionally swaps a
+        // leading piece letter for an SVG figurine (design/notation_line.dart). So with
+        // PieceNotation.letter selected this table renders figurines -- symbol notation -- and
+        // the SAN never appears as one string, which is why find.text('Nf3') finds nothing.
+        //
+        // The fix belongs in moveSan, not here. Writing an assertion that accepts the figurine
+        // would lock in a setting that silently does the opposite of what it says. The open
+        // question is which side is wrong: if the figurine is unintended, letter mode should be
+        // a plain Text; if it is intended, then "letter piece notation" is a lie for this table
+        // and the setting needs renaming rather than this test relaxing.
         final moveText = tester.widget<Text>(find.text('Nf3'));
         expect(
           moveText.style?.fontFamily,
