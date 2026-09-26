@@ -20,7 +20,7 @@ void main() {
     // loads a finished game, disable cloud eval because it is usually not available in mid/end game
     await makeEngineTestApp(tester, isCloudEvalEnabled: false, gameId: const GameId('xze7RH66'));
 
-    expect(find.byType(CircularProgressIndicator), findsOne);
+    expect(find.text('Loading…'), findsOne);
     // wait for the game to be loaded
     await tester.pump(const Duration(milliseconds: 50));
 
@@ -63,10 +63,7 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    // The popup lists the engine in a ListTile, which needs a Material ancestor.
-    expect(
-      find.descendant(of: find.byType(ListTile), matching: find.textContaining('Stockfish')),
-      findsOne,
-    );
+    // The popup lists the engine name in a Diagram row.
+    expect(find.textContaining('Stockfish'), findsOneWidget);
   });
 }
