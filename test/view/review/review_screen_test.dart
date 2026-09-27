@@ -550,7 +550,7 @@ void main() {
       expect(find.text('Nothing due.'), findsOneWidget);
     });
 
-    testWidgets('Opening Hubs section appears in drawer and filters review scope', (tester) async {
+    testWidgets('Openings section appears in drawer and filters review scope', (tester) async {
       const pgn1 = '''
 [Opening "Sicilian Defense: Najdorf"]
 1. e4 c5 2. Nf3 d6 *
