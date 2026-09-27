@@ -66,99 +66,96 @@ class _EngineButtonState extends ConsumerState<EngineButton> {
       fontSize: 11,
     );
 
-    return Column(
-      // The readout used to be `Positioned(bottom: -6)` inside a `clipBehavior: Clip.none`
-      // Stack, deliberately overhanging the chip. It is a 92px-wide engine name and eval in a
-      // 48px chip, so it spilled 22px past each edge and 6px below. That was tolerable when the
-      // button sat at the foot of a column with empty space beneath; in the Diagram action row
-      // the button is a wrap item with a second row directly below, and the readout drew on top
-      // of the Menu/Flip row. Laying it out instead of positioning it makes the column as wide
-      // as the readout and as tall as chip + readout, so nothing paints outside its own box.
-      mainAxisSize: MainAxisSize.min,
+    return Stack(
+      clipBehavior: Clip.none,
+      alignment: Alignment.center,
       children: [
-        Stack(
-          clipBehavior: Clip.none,
-          alignment: Alignment.center,
-          children: [
-            SemanticIconButton(
-              semanticsLabel: context.l10n.toggleLocalEvaluation,
-              onPressed: widget.onTap,
-              onLongPress: () {
-                showPopover(
-                  context: context,
-                  bodyBuilder: (_) {
-                    return _EnginePopup(goDeeper: widget.goDeeper, filters: widget.filters);
-                  },
-                  direction: PopoverDirection.top,
-                  width: 250,
-                  backgroundColor:
-                      srs?.surface ??
-                      DialogTheme.of(context).backgroundColor ??
-                      ColorScheme.of(context).surfaceContainerHigh,
-                  transitionDuration: Duration.zero,
-                  popoverTransitionBuilder: (_, child) => child,
-                );
+        SemanticIconButton(
+          semanticsLabel: context.l10n.toggleLocalEvaluation,
+          onPressed: widget.onTap,
+          onLongPress: () {
+            showPopover(
+              context: context,
+              bodyBuilder: (_) {
+                return _EnginePopup(goDeeper: widget.goDeeper, filters: widget.filters);
               },
-              icon: Badge(
-                offset: const Offset(4, -7),
-                backgroundColor: ColorScheme.of(context).tertiaryContainer,
-                textColor: ColorScheme.of(context).onTertiaryContainer,
-                label: prefs.isEnabled && eval is CloudEval ? const Text('CLOUD') : null,
-                textStyle: const TextStyle(fontSize: 8),
-                isLabelVisible: prefs.isEnabled && eval is CloudEval,
-                child: Stack(
-                  alignment: Alignment.center,
-                  children: [
-                    TweenAnimationBuilder<Color?>(
-                      curve: Curves.easeInOut,
-                      tween: ColorTween(begin: fromChipColor, end: toChipColor),
-                      duration: const Duration(milliseconds: 300),
-                      builder: (BuildContext context, Color? color, Widget? _) {
-                        return CustomPaint(
-                          size: const Size(microChipSize, microChipSize),
-                          painter: MicroChipPainter(color ?? toChipColor!),
-                        );
-                      },
-                    ),
-                    SizedBox(
-                      width: microChipSize,
-                      height: microChipSize,
-                      child: RepaintBoundary(
-                        child: Center(
-                          child: prefs.isEnabled
-                              ? eval is CloudEval
-                                    ? Text('${math.min(99, eval.depth)}', style: iconTextStyle)
-                                    : switch (engine) {
-                                        // No engine has been asked for yet.
-                                        null => Text('-', style: iconTextStyle),
-                                        AsyncError() => Text('!', style: iconTextStyle),
-                                        AsyncValue(isLoading: true) => loadingIndicator,
-                                        _ =>
-                                          eval?.depth != null
-                                              ? Text(
-                                                  '${math.min(99, eval!.depth)}',
-                                                  style: iconTextStyle,
-                                                )
-                                              : loadingIndicator,
-                                      }
-                              : const SizedBox.shrink(),
-                        ),
-                      ),
-                    ),
-                  ],
+              direction: PopoverDirection.top,
+              width: 250,
+              backgroundColor:
+                  srs?.surface ??
+                  DialogTheme.of(context).backgroundColor ??
+                  ColorScheme.of(context).surfaceContainerHigh,
+              transitionDuration: Duration.zero,
+              popoverTransitionBuilder: (_, child) => child,
+            );
+          },
+          icon: Badge(
+            offset: const Offset(4, -7),
+            backgroundColor: ColorScheme.of(context).tertiaryContainer,
+            textColor: ColorScheme.of(context).onTertiaryContainer,
+            label: prefs.isEnabled && eval is CloudEval ? const Text('CLOUD') : null,
+            textStyle: const TextStyle(fontSize: 8),
+            isLabelVisible: prefs.isEnabled && eval is CloudEval,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                TweenAnimationBuilder<Color?>(
+                  curve: Curves.easeInOut,
+                  tween: ColorTween(begin: fromChipColor, end: toChipColor),
+                  duration: const Duration(milliseconds: 300),
+                  builder: (BuildContext context, Color? color, Widget? _) {
+                    return CustomPaint(
+                      size: const Size(microChipSize, microChipSize),
+                      painter: MicroChipPainter(color ?? toChipColor!),
+                    );
+                  },
                 ),
-              ),
+                SizedBox(
+                  width: microChipSize,
+                  height: microChipSize,
+                  child: RepaintBoundary(
+                    child: Center(
+                      child: prefs.isEnabled
+                          ? eval is CloudEval
+                                ? Text('${math.min(99, eval.depth)}', style: iconTextStyle)
+                                : switch (engine) {
+                                    // No engine has been asked for yet.
+                                    null => Text('-', style: iconTextStyle),
+                                    AsyncError() => Text('!', style: iconTextStyle),
+                                    AsyncValue(isLoading: true) => loadingIndicator,
+                                    _ =>
+                                      eval?.depth != null
+                                          ? Text(
+                                              '${math.min(99, eval!.depth)}',
+                                              style: iconTextStyle,
+                                            )
+                                          : loadingIndicator,
+                                  }
+                          : const SizedBox.shrink(),
+                    ),
+                  ),
+                ),
+              ],
             ),
-          ],
+          ),
         ),
-        const SizedBox(height: 2),
-        Text(
-          engineShortLabel(engine?.value, spec: engineSpec) ?? prefs.enginePref.shortLabel,
-          textAlign: TextAlign.center,
-          style: TextStyle(
-            fontSize: 10,
-            fontWeight: FontWeight.w700,
-            color: textColor.withValues(alpha: 0.8),
+        // The readout is a `Positioned` child, so it never contributes to this Stack's size --
+        // the 48px chip does. Offsetting it by -6 therefore painted it *outside* the box, on top
+        // of whatever sits below. That was harmless when the button sat at the foot of a column
+        // with empty space beneath, but the Diagram action row puts a second row directly under
+        // it. Sitting it at bottom: 0 keeps the same visual (it still tucks under the icon, in
+        // the clear space at the foot of the 48px box) while moving it inside the button's own
+        // bounds -- and costs no layout, which matters because the action row in the archived
+        // game is already three lines tall and six extra pixels tips it.
+        Positioned(
+          bottom: 0,
+          child: Text(
+            engineShortLabel(engine?.value, spec: engineSpec) ?? prefs.enginePref.shortLabel,
+            style: TextStyle(
+              fontSize: 10,
+              fontWeight: FontWeight.w700,
+              color: textColor.withValues(alpha: 0.8),
+            ),
           ),
         ),
       ],
