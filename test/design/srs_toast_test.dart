@@ -147,4 +147,46 @@ void main() {
       await tester.pump(const Duration(milliseconds: 2400));
     }
   });
+
+  testWidgets('shows from a Navigator context, where the Overlay is below not above', (
+    tester,
+  ) async {
+    // The deep-link service takes its context from a GlobalKey<NavigatorState> so it can
+    // navigate before the first frame. That context sits *above* the Navigator's own Overlay,
+    // so the usual walk-up finds nothing and the toast was silently never inserted -- which
+    // `ScaffoldMessenger` had hidden, because MaterialApp installs one above the Navigator.
+    // A deep link to a bad FEN reported nothing at all.
+    final navigatorKey = GlobalKey<NavigatorState>();
+
+    // Shaped as app.dart has it: SrsTheme outside MaterialApp.
+    await tester.pumpWidget(
+      SrsTheme(
+        colors: SrsColors.light(SrsAccent.ultramarine),
+        child: MaterialApp(
+          navigatorKey: navigatorKey,
+          home: Builder(
+            builder: (context) => Scaffold(
+              body: Center(
+                child: SrsTextButton(
+                  label: 'Act',
+                  onPressed: () =>
+                      showSrsToast(navigatorKey.currentContext!, 'From a navigator context'),
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(navigatorKey.currentContext, isNotNull);
+    // The premise: that context is not under the Overlay.
+    expect(find.byType(Overlay), findsOneWidget);
+
+    await tester.tap(find.text('Act'));
+    await settleToast(tester);
+
+    expect(find.text('From a navigator context'), findsOneWidget);
+  });
 }
