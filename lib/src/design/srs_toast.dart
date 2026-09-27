@@ -32,7 +32,15 @@ enum SrsToastTone { info, success, error }
 /// One at a time: two stacked toasts is not a state the design describes, and a rapid sequence
 /// of confirmations would otherwise queue up and read as a backlog.
 void showSrsToast(BuildContext context, String message, {SrsToastTone tone = SrsToastTone.info}) {
-  final overlay = Overlay.maybeOf(context, rootOverlay: true);
+  // Two lookups, because the two callers need different ones. A widget's context finds the
+  // Overlay by walking up. But a `GlobalKey<NavigatorState>.currentContext` -- which is how the
+  // deep-link service gets a context, so it can navigate before the first frame -- sits *above*
+  // its own Overlay, and walking up from there finds nothing. `ScaffoldMessenger` did not have
+  // that problem, which is why this went unnoticed until the toast stopped being a SnackBar:
+  // deep-link error toasts were simply never inserted.
+  final overlay =
+      Overlay.maybeOf(context, rootOverlay: true) ??
+      Navigator.maybeOf(context, rootNavigator: true)?.overlay;
   if (overlay == null) return;
 
   // `tone` is accepted and deliberately not rendered -- see [SrsToastTone]. Not plumbed
