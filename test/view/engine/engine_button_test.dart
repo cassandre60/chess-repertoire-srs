@@ -4,12 +4,48 @@ import 'package:chess_srs/src/model/engine/position_evaluator.dart';
 import 'package:chess_srs/src/view/engine/engine_button.dart';
 import 'package:chess_srs/src/widgets/buttons.dart';
 import 'package:chessground/chessground.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import '../../model/engine/fake_engine.dart';
 import 'test_engine_app.dart';
 
 void main() {
+  // Regression: the readout was `Positioned(bottom: -6)` inside a `clipBehavior: Clip.none`
+  // Stack, so it painted outside the button on purpose. Harmless when the button sat at the foot
+  // of a column, but in the Diagram action row the button is a wrap item with a second row
+  // directly beneath it, and a 92px-wide readout landing 22px outside each edge and 6px below
+  // drew straight over the Menu/Flip row. Measured before the fix:
+  //   button 297.5..345.5 x 746..794
+  //   readout 275.4..367.7 x 786..800
+  testWidgets('engine readout paints nothing outside the button', (tester) async {
+    await makeEngineTestApp(tester, isCloudEvalEnabled: false, gameId: const GameId('xze7RH66'));
+    await tester.pump(kRequestEvalDebounceDelay + kEngineEvalEmissionThrottleDelay);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(EngineButton), findsOneWidget);
+
+    final box = tester.getRect(find.byType(EngineButton));
+    final spills = <String>[];
+
+    void walk(Element element) {
+      final ro = element.renderObject;
+      if (ro is RenderBox && ro.hasSize && element.widget is! EngineButton) {
+        final rect = ro.localToGlobal(Offset.zero) & ro.size;
+        if (rect.left < box.left - 0.5 ||
+            rect.right > box.right + 0.5 ||
+            rect.top < box.top - 0.5 ||
+            rect.bottom > box.bottom + 0.5) {
+          spills.add('${element.widget.runtimeType} $rect outside $box');
+        }
+      }
+      element.visitChildren(walk);
+    }
+
+    walk(tester.element(find.byType(EngineButton)));
+    expect(spills, isEmpty);
+  });
+
   testWidgets('Engine button is not displayed if computer analysis is not allowed', (tester) async {
     await makeEngineTestApp(tester, isComputerAnalysisAllowed: false);
     expect(find.byType(EngineButton), findsNothing);
