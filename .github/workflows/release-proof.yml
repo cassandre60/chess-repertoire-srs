@@ -14,7 +14,15 @@ name: Release proof
 # as action secrets, and extend this workflow (or fastlane) to use them.
 
 on:
+  # Manual runs, any time after this file reaches main.
   workflow_dispatch:
+  # Automatic proof for PRs that change this file itself: the run builds the
+  # release AAB, so the PR carries its own evidence. Nothing else triggers it.
+  pull_request:
+    paths:
+      - '.github/workflows/release-proof.yml'
+    branches:
+      - main
 
 # Declare default permissions as read only, plus artifact upload.
 permissions:
