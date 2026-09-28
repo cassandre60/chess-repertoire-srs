@@ -69,11 +69,21 @@ record findings at the top of your first PR description:
    chapters entry opens a picker rather than inlining a second study list. The brief's premise — that these screens are
    "still Lichess-styled" and unreachable from the Library sheet — was stale by then: R12 had already reskinned all three,
    and they had been reachable since the Home-tab removal in #51.
-2. **Quick annotation toggle.** The current app bar has an eye toggle. The design removes it from the top bar; the
-   preference lives in Settings ("Show notes after a move", "Show arrows and circles"). If the owner wants a quick
-   toggle, add it as a switch row at the top of the Library sheet, not back in the top bar.
+2. ~~**Quick annotation toggle.** The current app bar has an eye toggle.~~ **Resolved 2026-09-28: no quick
+   toggle — Settings only.** The brief's premises were already stale: R12 had removed the eye toggle from the top
+   bar, and `Show notes after a move` and `Show arrows and circles` are both in `SrsSettingsScreen` with the
+   design's verbatim copy. A third option was considered — a switch row at the top of the Library sheet, as this
+   brief suggested — and rejected: the sheet is a navigation sheet whose rows all go somewhere, and it does not
+   show which study is selected, so the toggle would be flipped blind. The one annotation you would plausibly
+   check mid-session, the study's arrows, needs a study in view.
 3. **Exiting Practice mode.** The prototype shows "Practice" in the top bar where the due count normally is. Implement it
    as a tappable label with semantics "Exit practice" (44dp target). A trailing small close glyph is allowed. Confirm.
+   **Resolved 2026-09-28: tappable label, no separate glyph.** It was built as *inert* `Practice` text beside a
+   separate 12px `Exit Practice` text button — measured at 168x16px, against the 44x44 minimum in
+   `03-components.md` §6, and two controls where the brief describes one. Since Cram mode is opt-in, that button was
+   the only exit from a mode the user had chosen to enter. The `Practice` label is now the target, wrapped in
+   `SrsPressable` with a 44px minimum and semantics `Exit practice`. The visible text is `ExcludeSemantics`-wrapped
+   so a screen reader hears the action rather than "Exit practice Practice".
 4. **Platform behaviour.** The design uses one visual language on all platforms. Keep platform *behaviours* (back
    gestures, scroll physics, haptics), not platform-specific *looks*. Confirm no iOS-native (Cupertino) look is wanted.
 5. **Bespoke art.** Piece set, wordmark, icon and sounds here are placeholders. Ask before spending effort refining them.
