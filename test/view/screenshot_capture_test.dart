@@ -437,7 +437,8 @@ void main() {
         );
       }, skip: !_enabled);
 
-      testWidgets('capture: analysis, $label, ${brightness.name}', (tester) async {        await capture(
+      testWidgets('capture: analysis, $label, ${brightness.name}', (tester) async {
+        await capture(
           tester,
           screen: 'analysis',
           label: label,
