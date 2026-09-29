@@ -771,18 +771,13 @@ class ReviewController extends AsyncNotifier<ReviewScreenState> {
       nextOrientation = nextPrompt.sideToMove;
     }
 
-    // A correct advancement resolves one due item, whether answered first-try
-    // or correctly on reguess after a lapse (retry carries event: null, so the
-    // lapse itself stays recorded while dues still drop exactly once).
-    final resolvesDueItem = isFirstAttempt || currentState.feedback == ReviewFeedback.incorrect;
-
-    final newTotalDue = resolvesDueItem && currentState.totalDueCount > 0
+    final newTotalDue = isFirstAttempt && currentState.totalDueCount > 0
         ? currentState.totalDueCount - 1
         : currentState.totalDueCount;
 
     final studyCounts = Map<String, int>.from(currentState.studyDueCounts);
     final currentStudyId = currentState.currentPrompt!.studyId;
-    if (resolvesDueItem &&
+    if (isFirstAttempt &&
         studyCounts.containsKey(currentStudyId) &&
         studyCounts[currentStudyId]! > 0) {
       studyCounts[currentStudyId] = studyCounts[currentStudyId]! - 1;
@@ -791,7 +786,7 @@ class ReviewController extends AsyncNotifier<ReviewScreenState> {
     final openingCounts = Map<String, int>.from(currentState.openingDueCounts);
     final currentChapter = session.getChapter(currentState.currentPrompt!.chapterId);
     final currentOpening = currentChapter?.opening;
-    if (resolvesDueItem &&
+    if (isFirstAttempt &&
         currentOpening != null &&
         openingCounts.containsKey(currentOpening) &&
         openingCounts[currentOpening]! > 0) {
@@ -802,7 +797,7 @@ class ReviewController extends AsyncNotifier<ReviewScreenState> {
     final chapterProgressMap = Map<String, RepertoireProgress>.from(currentState.chapterProgress);
     final openingProgressMap = Map<String, RepertoireProgress>.from(currentState.openingProgress);
     final currentChapterId = currentState.currentPrompt!.chapterId;
-    if (resolvesDueItem) {
+    if (isFirstAttempt) {
       final isNewlyLearned =
           result.event != null &&
           !result.event!.oldState.isLearned &&
