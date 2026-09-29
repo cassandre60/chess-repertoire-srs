@@ -288,10 +288,10 @@ private study needs a token, and there was no way to obtain one. The bullet abov
 as written because this note is a record of what was believed on the date it was written, and
 the correction belongs next to it rather than replacing it.
 
-Fix under review in `fix/account-entry` (PR #84, not yet merged at the time of writing): an
-`Account` section in `SrsSettingsScreen` provides the entry point, and the import dialog offers
-sign-in in context when a study import comes back 404 while signed out — the case that is
-ambiguous, since Lichess answers the same for a private study as for one that does not exist.
+Fixed in PR #84 (merged 2026-09-29): an `Account` section in `SrsSettingsScreen` provides the
+entry point, and the import dialog offers sign-in in context when a study import comes back 404
+while signed out — the case that is ambiguous, since Lichess answers the same for a private
+study as for one that does not exist.
 
 The lesson generalises past this finding: **a reachability claim needs a reference from outside
 the subtree it describes.** A handler inside an unreachable screen is not evidence the screen is
