@@ -119,7 +119,9 @@ class ReviewSession {
         return dueA.compareTo(dueB);
       });
 
-      if (remainingDailyQuota != null && _unbufferedQueue.length > remainingDailyQuota!) {
+      if (remainingDailyQuota != null &&
+          remainingDailyQuota! >= 0 &&
+          _unbufferedQueue.length > remainingDailyQuota!) {
         _logger.info(
           'Daily review quota ($remainingDailyQuota) reached, truncating queue to most urgent due items',
         );
@@ -576,7 +578,7 @@ class ReviewSession {
         remainingDailyQuota != null &&
         _completedDecisionIds.length >= remainingDailyQuota!) {
       _logger.info(
-        'Daily review quota reached ($_completedDecisionIds.length / $remainingDailyQuota), concluding review session',
+        'Daily review quota reached (${_completedDecisionIds.length} / $remainingDailyQuota), concluding review session',
       );
       _dueQueue.clear();
       _unbufferedQueue.clear();
