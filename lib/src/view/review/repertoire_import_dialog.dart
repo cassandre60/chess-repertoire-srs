@@ -6,7 +6,10 @@ import 'dart:math' as math;
 
 import 'package:chess_srs/src/design/design.dart';
 import 'package:chess_srs/src/import/lichess_study_importer.dart';
+import 'package:chess_srs/src/model/auth/auth_controller.dart';
 import 'package:chess_srs/src/review/review_controller.dart';
+import 'package:chess_srs/src/view/auth/sign_in_error.dart';
+import 'package:chess_srs/src/view/auth/sign_in_options.dart';
 import 'package:chess_srs/src/view/more/import_pgn_screen.dart';
 import 'package:chess_srs/src/widgets/feedback.dart';
 import 'package:dartchess/dartchess.dart';
@@ -68,6 +71,12 @@ class _RepertoireImportDialogState extends ConsumerState<RepertoireImportDialog>
   final _titleController = TextEditingController();
   bool _isImporting = false;
 
+  /// Lichess 404'd a study id while signed out, so the study may be private rather than missing.
+  ///
+  /// Drives the inline sign-in prompt instead of an error toast. Reset as soon as the import is
+  /// retried, because a successful retry means the guess was right and there is nothing to explain.
+  bool _studyMayBePrivate = false;
+
   @override
   void initState() {
     super.initState();
@@ -118,7 +127,12 @@ class _RepertoireImportDialogState extends ConsumerState<RepertoireImportDialog>
       return;
     }
 
-    setState(() => _isImporting = true);
+    setState(() {
+      _isImporting = true;
+      // Retrying supersedes the explanation: if it works this time, the study was private and
+      // the prompt has nothing left to say.
+      _studyMayBePrivate = false;
+    });
     try {
       final customTitle = _titleController.text.trim();
       final result = await ref
@@ -144,6 +158,19 @@ class _RepertoireImportDialogState extends ConsumerState<RepertoireImportDialog>
             type: SnackBarType.success,
           );
         }
+      }
+    } on StudyNotFoundException catch (e) {
+      // Before FormatException: this is a subclass, and the specific case is the one that
+      // deserves different handling.
+      if (!mounted) return;
+      if (ref.read(isLoggedInProvider)) {
+        // Signed in and still a 404, so it genuinely is not there. The toast's advice holds.
+        showSnackBar(context, e.message, type: SnackBarType.error);
+      } else {
+        // Signed out, 404 cannot distinguish private from non-existent. Offering sign-in and a
+        // retry costs nothing if the study really is missing, whereas the toast's "ensure it is
+        // public or unlisted" tells the user to check something that was never the problem.
+        setState(() => _studyMayBePrivate = true);
       }
     } on FormatException catch (e) {
       if (mounted) {
@@ -219,6 +246,19 @@ class _RepertoireImportDialogState extends ConsumerState<RepertoireImportDialog>
     final isWide = mediaQuery.size.width >= 768;
     final bottomInset = mediaQuery.viewInsets.bottom;
     final maxWidth = isWide ? math.min(520.0, mediaQuery.size.width - 48.0) : double.infinity;
+    final isSignedIn = ref.watch(isLoggedInProvider);
+
+    // `showSignInOptions` fires the browser flow with `.ignore()`, so nothing reports a failure
+    // unless the caller listens for it. Without this a refused or cancelled sign-in is silent.
+    ref.listen(signInMutation, (_, next) => showSignInErrorSnackBar(context, next));
+
+    // Signing in is the answer to "this study is private", so resume the import the user was
+    // already doing rather than making them retype the URL and press the button again.
+    ref.listen(isLoggedInProvider, (previous, next) {
+      if (!(previous ?? false) && next && _studyMayBePrivate && mounted) {
+        _handleLichessImport();
+      }
+    });
 
     final content = Align(
       alignment: isWide ? Alignment.center : Alignment.bottomCenter,
@@ -359,6 +399,13 @@ class _RepertoireImportDialogState extends ConsumerState<RepertoireImportDialog>
                             onPressed: _isImporting ? null : _handleLichessImport,
                           ),
                         ),
+                        if (!isSignedIn) ...[
+                          const SizedBox(height: 10.0),
+                          _SignInHint(
+                            mayBePrivate: _studyMayBePrivate,
+                            onSignIn: () => showSignInOptions(context, ref),
+                          ),
+                        ],
                       ] else ...[
                         TextField(
                           controller: _titleController,
@@ -456,6 +503,45 @@ class _RepertoireImportDialogState extends ConsumerState<RepertoireImportDialog>
           child: content,
         ),
       ],
+    );
+  }
+}
+
+/// Sign-in affordance for the Lichess tab, shown only while signed out.
+///
+/// Kept this quiet on purpose. A Lichess bearer token is needed for private and unlisted
+/// studies and for nothing else the import flow does, so a filled call-to-action here would
+/// press an account requirement onto every user fetching a public study, most of whom have no
+/// reason to want one. One low-ink line, and an explanation only once a 404 has made it relevant.
+class _SignInHint extends StatelessWidget {
+  const _SignInHint({required this.mayBePrivate, required this.onSignIn});
+
+  /// A signed-out import just came back 404, so the study may be private rather than missing.
+  final bool mayBePrivate;
+
+  final VoidCallback onSignIn;
+
+  @override
+  Widget build(BuildContext context) {
+    final c = context.srs;
+    if (mayBePrivate) {
+      return Column(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            'Lichess answers the same for a private study as for one that does not exist. '
+            'Sign in to tell the two apart.',
+            textAlign: TextAlign.center,
+            style: SrsText.rowSub(c.ink2),
+          ),
+          const SizedBox(height: 2),
+          SrsTextButton(label: 'Sign in and retry', onPressed: onSignIn),
+        ],
+      );
+    }
+    return Align(
+      alignment: Alignment.center,
+      child: SrsTextButton(label: 'Importing a private study? Sign in', onPressed: onSignIn),
     );
   }
 }
