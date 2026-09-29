@@ -321,6 +321,34 @@ void main() {
       expect(state.expectedMove, isNull);
     });
 
+    test('retry-correct after a lapse resolves the due item', () async {
+      final container = createContainer();
+      final controller = container.read(reviewControllerProvider.notifier);
+
+      const pgn = '''
+[Event "Italian Game"]
+1. e4 e5 2. Nf3 Nc6 *
+''';
+
+      await controller.importPgnText(pgnText: pgn, title: 'Italian', repertoireSide: Side.white);
+
+      var state = container.read(reviewControllerProvider).requireValue;
+      expect(state.totalDueCount, 2);
+
+      // Lapse on 1. e4: play 1. d4 instead.
+      final lapse = await controller.onUserMove(const NormalMove(from: Square.d2, to: Square.d4));
+      expect(lapse, isNotNull);
+      expect(lapse!.isCorrect, isFalse);
+
+      // Reguess correctly: the lapsed position is now resolved, so dues drop.
+      final retry = await controller.onUserMove(const NormalMove(from: Square.e2, to: Square.e4));
+      expect(retry, isNotNull);
+      expect(retry!.isCorrect, isTrue);
+
+      state = container.read(reviewControllerProvider).requireValue;
+      expect(state.totalDueCount, 1);
+    });
+
     test(
       'handles incorrect move (lapse), shows expected move, and continues on acknowledge',
       () async {
