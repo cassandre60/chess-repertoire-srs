@@ -172,6 +172,11 @@ class SrsSheetDismissible extends StatelessWidget {
       direction: DismissDirection.down,
       dismissThresholds: const {DismissDirection.down: 0.25},
       movementDuration: const Duration(milliseconds: 200),
+      // Translucent, like the drag-end detector this replaces: taps outside
+      // the sheet must keep reaching the barrier behind it (barrier-tap
+      // dismissal broke under the default opaque, which claims taps across
+      // the whole route area). Drags starting on the sheet still track.
+      behavior: HitTestBehavior.translucent,
       onDismissed: (_) => Navigator.of(context).pop(),
       child: child,
     );
