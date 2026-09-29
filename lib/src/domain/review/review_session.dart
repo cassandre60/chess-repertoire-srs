@@ -283,6 +283,7 @@ class ReviewSession {
           parentId: null,
           fen4: prompt.fenKey,
           expectedMoveUci: expectedMatch.uci,
+          hasCanonicalIdentity: decision.canonicalStateId != null,
         );
         final graphResult = _coordinator.recordActiveReview(
           node: graphNode,
@@ -334,6 +335,7 @@ class ReviewSession {
           parentId: null,
           fen4: prompt.fenKey,
           expectedMoveUci: prompt.expectedMoves.first.uci,
+          hasCanonicalIdentity: decision.canonicalStateId != null,
         );
         final siblings = _findSiblingGraphNodes(decision);
         final graphResult = _coordinator.recordActiveReview(
@@ -517,6 +519,7 @@ class ReviewSession {
             parentId: prompt.decision.canonicalId,
             fen4: opponentChild.fenKey,
             expectedMoveUci: userMove.uci,
+            hasCanonicalIdentity: nextDecision.canonicalStateId != null,
           );
           final exposedState = _coordinator.recordAutoTraversalExposure(node: expNode, now: now);
           if (exposedState != null) {
@@ -784,6 +787,7 @@ class ReviewSession {
             parentId: null,
             fen4: node.fenKey,
             expectedMoveUci: m.uci,
+            hasCanonicalIdentity: other.canonicalStateId != null,
           ),
         );
       }
