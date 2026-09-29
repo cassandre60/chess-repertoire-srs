@@ -27,6 +27,7 @@ gates — and mandatory runtime validation.
 | **Review Scene Rendering & Interaction** | Widget tests using Lichess `test_helpers.dart` board helpers | review scene |
 | **Incremental Persistence** | Repository tests asserting write scope | persistence module |
 | **Move Validation Latency (< 16 ms, §4.1)** | Wall-clock assertion on the median of a graded-move batch, sample list printed on failure | `test/review/move_latency_test.dart` |
+| **No Unreachable Source** | Import/export graph walk from `lib/main.dart`; new unreachable files fail, ratcheted against a baseline | `test/reachability/reachability_test.dart` |
 | **Complete Mandatory Quality Gate** | Executable script | `./verify` |
 
 ## 2. Test Suite Organization (target)
