@@ -69,6 +69,7 @@ class _RepertoireImportDialogState extends ConsumerState<RepertoireImportDialog>
   final _lichessUrlController = TextEditingController();
   final _pgnController = TextEditingController();
   final _titleController = TextEditingController();
+  final _scrollController = ScrollController();
   bool _isImporting = false;
 
   /// Lichess 404'd a study id while signed out, so the study may be private rather than missing.
@@ -89,6 +90,7 @@ class _RepertoireImportDialogState extends ConsumerState<RepertoireImportDialog>
     _lichessUrlController.dispose();
     _pgnController.dispose();
     _titleController.dispose();
+    _scrollController.dispose();
     super.dispose();
   }
 
@@ -171,6 +173,14 @@ class _RepertoireImportDialogState extends ConsumerState<RepertoireImportDialog>
         // retry costs nothing if the study really is missing, whereas the toast's "ensure it is
         // public or unlisted" tells the user to check something that was never the problem.
         setState(() => _studyMayBePrivate = true);
+        // The user pressed Fetch at the bottom of a scrolled form, and the notice explaining
+        // what happened sits at the top. Without this the explanation and its action open
+        // above the viewport, so a failure with a known cause and a known fix looks like a
+        // failure with neither. Only the vertical axis: the body is already scrolled to the
+        // left, and an animated jump on a short surface would read as a glitch.
+        if (_scrollController.hasClients) {
+          _scrollController.jumpTo(0);
+        }
       }
     } on FormatException catch (e) {
       if (mounted) {
@@ -283,6 +293,7 @@ class _RepertoireImportDialogState extends ConsumerState<RepertoireImportDialog>
                 top: false,
                 bottom: !isWide,
                 child: SingleChildScrollView(
+                  controller: _scrollController,
                   padding: EdgeInsets.only(
                     left: 20.0,
                     right: 20.0,
@@ -316,6 +327,15 @@ class _RepertoireImportDialogState extends ConsumerState<RepertoireImportDialog>
                           ),
                         ],
                       ),
+                      // Pinned above the scroll view, not below the form. The dialog's body is
+                      // taller than a landscape phone, so anything placed after the fields
+                      // starts below the fold exactly when it matters: the explanation of a
+                      // failed import, and the way to recover from it, were both invisible on
+                      // an 844x390 surface without the user scrolling to find them.
+                      if (_studyMayBePrivate) ...[
+                        _PrivateStudyNotice(onSignIn: () => showSignInOptions(context, ref)),
+                        const SizedBox(height: 14.0),
+                      ],
                       const SizedBox(height: 14.0),
                       SrsSegmented<ImportSource>(
                         options: const {
@@ -399,12 +419,9 @@ class _RepertoireImportDialogState extends ConsumerState<RepertoireImportDialog>
                             onPressed: _isImporting ? null : _handleLichessImport,
                           ),
                         ),
-                        if (!isSignedIn) ...[
+                        if (!isSignedIn && !_studyMayBePrivate) ...[
                           const SizedBox(height: 10.0),
-                          _SignInHint(
-                            mayBePrivate: _studyMayBePrivate,
-                            onSignIn: () => showSignInOptions(context, ref),
-                          ),
+                          _SignInHint(onSignIn: () => showSignInOptions(context, ref)),
                         ],
                       ] else ...[
                         TextField(
@@ -512,36 +529,54 @@ class _RepertoireImportDialogState extends ConsumerState<RepertoireImportDialog>
 /// Kept this quiet on purpose. A Lichess bearer token is needed for private and unlisted
 /// studies and for nothing else the import flow does, so a filled call-to-action here would
 /// press an account requirement onto every user fetching a public study, most of whom have no
-/// reason to want one. One low-ink line, and an explanation only once a 404 has made it relevant.
+/// reason to want one. One low-ink line, below the form, where it costs nothing to ignore.
+///
+/// A failed import does not use this — it uses [_PrivateStudyNotice].
 class _SignInHint extends StatelessWidget {
-  const _SignInHint({required this.mayBePrivate, required this.onSignIn});
+  const _SignInHint({required this.onSignIn});
 
-  /// A signed-out import just came back 404, so the study may be private rather than missing.
-  final bool mayBePrivate;
+  final VoidCallback onSignIn;
+
+  @override
+  Widget build(BuildContext context) {
+    return Align(
+      alignment: Alignment.center,
+      child: SrsTextButton(label: 'Importing a private study? Sign in', onPressed: onSignIn),
+    );
+  }
+}
+
+/// Explains a signed-out 404 and offers to resolve it.
+///
+/// Deliberately separate from [_SignInHint], because it is a different kind of thing: that one
+/// is an aside about a case the user has not hit yet, this one is the response to a failure
+/// they just saw. It sits above the form rather than below it — the dialog's body is taller
+/// than a landscape phone, so a notice placed after the fields starts below the fold in
+/// exactly the state where the user needs it. It also does not claim to know why the study
+/// was not returned, because an anonymous request genuinely cannot tell.
+class _PrivateStudyNotice extends StatelessWidget {
+  const _PrivateStudyNotice({required this.onSignIn});
 
   final VoidCallback onSignIn;
 
   @override
   Widget build(BuildContext context) {
     final c = context.srs;
-    if (mayBePrivate) {
-      return Column(
-        crossAxisAlignment: CrossAxisAlignment.center,
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 6),
+      decoration: BoxDecoration(color: c.hairlineSoft, borderRadius: BorderRadius.circular(10)),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             'Lichess answers the same for a private study as for one that does not exist. '
             'Sign in to tell the two apart.',
-            textAlign: TextAlign.center,
             style: SrsText.rowSub(c.ink2),
           ),
           const SizedBox(height: 2),
           SrsTextButton(label: 'Sign in and retry', onPressed: onSignIn),
         ],
-      );
-    }
-    return Align(
-      alignment: Alignment.center,
-      child: SrsTextButton(label: 'Importing a private study? Sign in', onPressed: onSignIn),
+      ),
     );
   }
 }

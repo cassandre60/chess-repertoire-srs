@@ -149,4 +149,52 @@ void main() {
       expect(const StudyNotFoundException('nope').message, 'nope');
     });
   });
+
+  group('the failure notice is reachable from where the user is', () {
+    // Found by looking at a landscape capture, not by an assertion: the dialog body is taller
+    // than a landscape phone, the user presses Fetch at the bottom of the form, and a notice
+    // pinned near the top then opened above the viewport. A failure with a known cause and a
+    // known fix read as a failure with neither. Fails without the scroll-to-top on failure.
+    testWidgets('is on screen after a 404 on a surface shorter than the form', (tester) async {
+      const landscape = Size(844, 390);
+      final app = await makeTestProviderScopeApp(
+        tester,
+        home: const RepertoireImportDialog(),
+        surfaceSize: landscape,
+        overrides: {
+          lichess_study.studyRepositoryProvider: lichess_study.studyRepositoryProvider.overrideWith(
+            (ref) => lichess_study.StudyRepository(ref, privateStudyClient()),
+          ),
+        },
+      );
+      await tester.pumpWidget(app);
+      await tester.pumpAndSettle();
+
+      await tester.enterText(find.byType(TextField).first, 'm1AbCd2E');
+      await tester.ensureVisible(find.text('Fetch & Import from Lichess'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Fetch & Import from Lichess'));
+      await tester.pumpAndSettle();
+
+      final notice = find.textContaining('Lichess answers the same');
+      expect(notice, findsOneWidget, reason: 'the 404 notice should be rendered');
+
+      final noticeRect = tester.getRect(notice);
+      expect(
+        noticeRect.bottom,
+        lessThanOrEqualTo(landscape.height),
+        reason: 'the notice must be inside the viewport, not scrolled above it',
+      );
+      expect(
+        noticeRect.top,
+        greaterThanOrEqualTo(0),
+        reason: 'the notice must not be clipped off the top of the screen',
+      );
+
+      // And the recovery action has to be reachable, not just visible.
+      final retry = find.text('Sign in and retry');
+      expect(retry, findsOneWidget);
+      expect(tester.getRect(retry).bottom, lessThanOrEqualTo(landscape.height));
+    });
+  });
 }
