@@ -1,7 +1,5 @@
 import UIKit
 import Flutter
-import UserNotifications
-import flutter_local_notifications
 
 @main
 @objc class AppDelegate: FlutterAppDelegate, FlutterImplicitEngineDelegate {
@@ -9,15 +7,6 @@ import flutter_local_notifications
     _ application: UIApplication,
     didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?
   ) -> Bool {
-    // Apple requires the UNUserNotificationCenter delegate to be assigned before
-    // `application:didFinishLaunchingWithOptions:` returns, otherwise a notification tapped from a
-    // terminated state can be dropped. This app uses the UIScene lifecycle, so plugins are only
-    // registered later in `didInitializeImplicitFlutterEngine`, which is too late.
-    // FlutterAppDelegate forwards the notification center callbacks to every plugin registered
-    // with `addApplicationDelegate:`, which is how both firebase_messaging and
-    // flutter_local_notifications expect to receive them.
-    UNUserNotificationCenter.current().delegate = self as UNUserNotificationCenterDelegate
-
     return super.application(application, didFinishLaunchingWithOptions: launchOptions)
   }
 
