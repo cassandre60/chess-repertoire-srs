@@ -17,27 +17,8 @@ import Flutter
       SharePlugin.register(with: shareRegistrar)
     }
 
-    let BADGE_CHANNEL = FlutterMethodChannel(name: "mobile.lichess.org/badge",
-                                                    binaryMessenger: engineBridge.applicationRegistrar.messenger())
-
     let SYSTEM_CHANNEL = FlutterMethodChannel(name: "mobile.lichess.org/system",
                                                     binaryMessenger: engineBridge.applicationRegistrar.messenger())
-
-    BADGE_CHANNEL.setMethodCallHandler({
-      (call: FlutterMethodCall, result: @escaping FlutterResult) -> Void in
-      guard call.method == "setBadge" else {
-        result(FlutterMethodNotImplemented)
-        return
-      }
-
-        if let args = call.arguments as? Dictionary<String, Any>,
-            let badge = args["badge"] as? Int {
-            UIApplication.shared.applicationIconBadgeNumber = badge
-            result(nil)
-        } else {
-            result(FlutterError(code: "bad_args", message: "bad arguments", details: nil))
-        }
-    })
 
     SYSTEM_CHANNEL.setMethodCallHandler({
       (call: FlutterMethodCall, result: @escaping FlutterResult) -> Void in
@@ -48,12 +29,6 @@ import Flutter
 
       result(self.getPhysicalMemory())
     })
-
-    // Cf: https://github.com/MaikuB/flutter_local_notifications/tree/master/flutter_local_notifications#notification-actions
-    // This is required to make any communication available in the action isolate.
-    FlutterLocalNotificationsPlugin.setPluginRegistrantCallback { (registry) in
-        GeneratedPluginRegistrant.register(with: registry)
-    }
   }
 
   private func getPhysicalMemory() -> Int {
