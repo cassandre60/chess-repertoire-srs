@@ -87,8 +87,7 @@ void main() {
     expect(
       _invariantRowCount(),
       greaterThanOrEqualTo(10),
-      reason:
-          'the matrix had 13 invariants; ${_invariantRowCount()} rows means most were removed',
+      reason: 'the matrix had 13 invariants; ${_invariantRowCount()} rows means most were removed',
     );
   });
 }
