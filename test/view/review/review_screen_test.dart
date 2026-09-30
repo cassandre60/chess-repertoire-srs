@@ -729,7 +729,7 @@ void main() {
     });
 
     testWidgets(
-      'study options Chapters navigates even when chapter load outlasts the dismiss animation',
+      'study options Analyze navigates even when chapter load outlasts the dismiss animation',
       (tester) async {
         final importResult = importPgn(
           '1. e4 e5 *',
@@ -764,20 +764,14 @@ void main() {
         await tester.longPress(find.text('King Pawn'));
         await pumpAsync(tester, 600);
 
-        // Tap Chapters: pops both sheets, loads chapters, then must navigate.
-        // Strict lose-order for the race: the 300ms pump completes the 180ms
-        // dismiss transitions (unmounting the drawer) while the 400ms load is
-        // still pending; the 500ms pump fires the load timer; pumpAsync then
-        // gives the DB read a real-time window so the continuation runs on
-        // the dead context. Pre-fix the push is skipped; post-fix the
-        // captured navigator pushes regardless.
-        await tester.tap(find.text('Chapters'));
+        // Tap Analyze: pops both sheets, loads chapters, then must navigate.
+        await tester.tap(find.text('Analyze'));
         await tester.pump(const Duration(milliseconds: 300));
         await tester.pump(const Duration(milliseconds: 500));
         await pumpAsync(tester, 600);
-        await tester.pumpAndSettle();
+        await tester.pump(const Duration(milliseconds: 500));
 
-        expect(find.byType(StudyChaptersScreen), findsOneWidget);
+        expect(find.byType(StudyScreen), findsOneWidget);
       },
     );
 
