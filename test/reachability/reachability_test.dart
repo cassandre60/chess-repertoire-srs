@@ -68,9 +68,9 @@ const _knownUnreachable = <String, String>{
   // Cut-feature surfaces. Each still has a test, which is how they were found: a test can
   // outlive the screen it tests without anything noticing.
   'lib/src/view/settings/account_preferences_screen.dart':
-      "Account preferences, with a test but no importer. Whether to keep it is a product "
-      "decision now that PR #84 revived the account cluster, not a cleanup — do not delete "
-      "it on this test's say-so.",
+      'Account preferences, with a test but no importer. Whether to keep it is a product '
+      'decision now that PR #84 revived the account cluster, not a cleanup — do not '
+      'delete it on the strength of this test.',
   'lib/src/view/user/user_profile.dart': 'Inherited from the cut user/profile surfaces.',
   'lib/src/view/user/user_activity.dart': 'Inherited from the cut user-activity surfaces.',
   'lib/src/view/study/study_list_screen.dart':
