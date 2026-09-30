@@ -30,19 +30,21 @@ String computePgnHash(String pgnText, [List<PgnGame<PgnNodeData>>? games]) {
     if (parsed.isNotEmpty) {
       final buffer = StringBuffer();
       for (final game in parsed) {
-        final fen = game.headers['FEN'];
-        if (fen != null && fen.trim().isNotEmpty) {
-          // Normalise exactly like the import path (startingPosition().fen),
-          // so this agrees with computeRepertoireTreeHash on the stored
-          // startingFen: a raw header with e.g. a spurious EP square must not
-          // hash differently from the normalised position it becomes.
-          String key;
+        // The starting position is resolved exactly as importPgn resolves it, rather than read
+        // off the header. dartchess rewrites a legal FEN on the way in — an en-passant square no
+        // pawn can capture becomes '-', castling rights come back in canonical order — and a
+        // Chapter stores that normalised form as its startingFen. Hashing the raw header text
+        // instead gave this function a different answer from computeRepertoireTreeHash for
+        // every PGN that starts from a FEN, which is what stopped a backfilled study from ever
+        // being recognised as a duplicate of the file it came from.
+        if (game.headers['FEN'] != null && game.headers['FEN']!.trim().isNotEmpty) {
           try {
-            key = fenKey(PgnGame.startingPosition(game.headers).fen);
+            buffer.write('FEN:${fenKey(PgnGame.startingPosition(game.headers).fen)};');
           } catch (_) {
-            key = fenKey(fen);
+            // An unusable FEN makes the whole chapter unimportable, so it contributes no moves
+            // either; hashing it here would make this fingerprint depend on bytes the import
+            // path ignores.
           }
-          buffer.write('FEN:$key;');
         }
         _appendPgnNodeMoves(game.moves, buffer);
         buffer.write('|');
@@ -52,7 +54,9 @@ String computePgnHash(String pgnText, [List<PgnGame<PgnNodeData>>? games]) {
         return sha256.convert(utf8.encode(canonicalStr)).toString();
       }
     }
-  } catch (_) {}
+  } catch (e, st) {
+    _logger.warning('Tree-based PGN hash failed, falling back to text hash', e, st);
+  }
 
   // Fallback if parsing fails
   final normalized = pgnText.trim();
@@ -472,11 +476,20 @@ Side resolveChapterOrientation(
 }
 
 String _chapterTitle(PgnHeaders headers, int index) {
-  // Prefer a meaningful player matchup, but only when both names are real.
-  bool realName(String? name) =>
-      name != null && name != '?' && name != '*' && name.trim().isNotEmpty;
-  if (realName(headers['White']) && realName(headers['Black'])) {
-    return '${headers['White']} vs ${headers['Black']}';
+  // A dedicated title tag wins outright. This app's own exporter writes one ([Chapter], and
+  // [Study] for the parent), so reading it first is what makes export -> re-import preserve the
+  // name instead of collapsing every chapter onto the exporter's placeholder player tags.
+  for (final key in ['Chapter', 'ChapterName']) {
+    final v = headers[key];
+    if (v != null && v.trim().isNotEmpty && v != '?') return v.trim();
+  }
+
+  // Then a meaningful player matchup, but only when both names are real. The exporter always
+  // writes "Repertoire"/"Opponent" here, so those are placeholders, not a matchup to display.
+  final white = headers['White']?.trim();
+  final black = headers['Black']?.trim();
+  if (!_isPlaceholderPlayerTag(white) && !_isPlaceholderPlayerTag(black)) {
+    return '$white vs $black';
   }
 
   // Fall back to Event or Site.
@@ -486,6 +499,18 @@ String _chapterTitle(PgnHeaders headers, int index) {
   }
 
   return 'Game ${index + 1}';
+}
+
+/// Whether a PGN player tag is a placeholder rather than a person.
+///
+/// `?` and `*` are the PGN conventions. `Repertoire` and `Opponent` are this app's own: the
+/// exporter writes them into [White]/[Black] to record which side the chapter is about, and
+/// writes the real names nowhere else. Treating them as a matchup to display is what made every
+/// exported chapter come back as "Repertoire vs Opponent".
+bool _isPlaceholderPlayerTag(String? name) {
+  if (name == null || name.isEmpty) return true;
+  final n = name.toLowerCase();
+  return n == '?' || n == '*' || n == 'repertoire' || n == 'opponent';
 }
 
 /// Builds a [RepertoireNode] root from the PGN node tree, or null on fatal error.
