@@ -27,7 +27,7 @@ gates — and mandatory runtime validation.
 | **Review Scene Rendering & Interaction** | Widget tests using Lichess `test_helpers.dart` board helpers | `test/view/review/review_screen_test.dart` |
 | **Incremental Persistence** | Repository tests asserting write scope | `test/persistence/sqlite_study_repository_test.dart` |
 | **Move Validation Latency (< 16 ms, §4.1)** | Wall-clock assertion on the median of a graded-move batch, sample list printed on failure | `test/review/move_latency_test.dart` |
-| **Spec-to-Test Traceability (SPEC.md)** | Every `INV-xxx` cited by at least one test; tests cite only real IDs (gate G05) | `SPEC.md` ↔ `test/**` via `// SPEC coverage:` citations |
+| **Spec-to-Test Traceability (SPEC.md)** | Every `INV-xxx` cited by at least one test; tests cite only real IDs (gate G05) | `SPEC.md` ↔ `test/` suites via SPEC coverage comments |
 | **No Unreachable Source** | Import/export graph walk from `lib/main.dart`; new unreachable files fail, ratcheted against a baseline | `test/reachability/reachability_test.dart` |
 | **Complete Mandatory Quality Gate** | Executable script | `verify` |
 
