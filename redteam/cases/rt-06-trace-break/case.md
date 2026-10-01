@@ -18,4 +18,4 @@ The suite is green and no assertion was touched; only the trace check
 notices the orphaned invariant.
 
 Patch file: `patch.diff` (git diff format, applies to the commit recorded below)
-Recorded against: GATE_COMMIT
+Recorded against: 21a137d67

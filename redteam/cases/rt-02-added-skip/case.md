@@ -16,4 +16,4 @@ regress undetected.
 Skipped tests report success; only a skip counter or diff scan notices.
 
 Patch file: `patch.diff` (git diff format, applies to the commit recorded below)
-Recorded against: GATE_COMMIT
+Recorded against: 21a137d67

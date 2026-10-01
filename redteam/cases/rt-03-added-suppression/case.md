@@ -17,4 +17,4 @@ and human acknowledgement.
 suppression (and the G10 suppression ratchet on the next metrics run).
 
 Patch file: `patch.diff` (git diff format, applies to the commit recorded below)
-Recorded against: GATE_COMMIT
+Recorded against: 21a137d67

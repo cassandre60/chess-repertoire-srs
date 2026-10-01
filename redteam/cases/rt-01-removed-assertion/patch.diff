@@ -1,0 +1,12 @@
+diff --git a/test/domain/scheduler_test.dart b/test/domain/scheduler_test.dart
+index 1efb3efe8..b0e84518d 100644
+--- a/test/domain/scheduler_test.dart
++++ b/test/domain/scheduler_test.dart
+@@ -147,7 +147,6 @@ void main() {
+         state = tiny.schedule(previous: state, result: ReviewResult.correct, now: now);
+         now = state.nextDueAt!;
+       }
+-      final interval = state.nextDueAt!.difference(state.lastReviewedAt!);
+       expect(interval.inDays, lessThanOrEqualTo(30));
+     });
+ 

@@ -16,4 +16,4 @@ The suite is green and analysis is clean; only the dependency ratchet and
 referee protection notice.
 
 Patch file: `patch.diff` (git diff format, applies to the commit recorded below)
-Recorded against: GATE_COMMIT
+Recorded against: 21a137d67

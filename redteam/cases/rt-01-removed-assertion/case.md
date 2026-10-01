@@ -16,4 +16,4 @@ for; a later clamp regression would go green.
 The suite is green, coverage is unchanged, and no file is skipped.
 
 Patch file: `patch.diff` (git diff format, applies to the commit recorded below)
-Recorded against: GATE_COMMIT
+Recorded against: 21a137d67

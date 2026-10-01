@@ -17,4 +17,4 @@ Every test still passes against the weakened wording; only referee
 protection notices that the spec itself moved.
 
 Patch file: `patch.diff` (git diff format, applies to the commit recorded below)
-Recorded against: GATE_COMMIT
+Recorded against: 21a137d67

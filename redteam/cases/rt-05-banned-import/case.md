@@ -17,4 +17,4 @@ can follow the precedent.
 The suite is green and analysis is clean; only the boundary scan notices.
 
 Patch file: `patch.diff` (git diff format, applies to the commit recorded below)
-Recorded against: GATE_COMMIT
+Recorded against: 21a137d67
