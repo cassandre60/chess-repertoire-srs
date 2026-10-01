@@ -25,6 +25,11 @@ import subprocess
 import sys
 
 TEST_PATH = re.compile(r"(^|/)(tests?|__tests__|spec|specs|e2e|integration_test)(/|$)|(_test|_spec|\.test|\.spec)\.|(^|/)test_[^/]*$", re.I)
+# Inert or self-describing trees are never scanned: the red-team corpus
+# deliberately STORES weakening patterns as data, and this script necessarily
+# NAMES the patterns it hunts. Both trees are guarded by G07 protected-paths
+# instead, so excluding them here loses no coverage of live code.
+SKIP_PATH_PREFIXES = ("redteam/", "scripts/gates/")
 ASSERT = re.compile(r"\bexpect(Later)?\s*\(|\bassert\s*\(|\bassert\b")
 CASE = re.compile(r"^\s*(testWidgets|test|group)\s*\(")
 SKIP = re.compile(r"[(,]\s*skip\s*:")
@@ -60,6 +65,8 @@ def main():
     findings = []
     for path, lineno, sign, text in diff_lines(args.base, args.head):
         if not path:
+            continue
+        if path.startswith(SKIP_PATH_PREFIXES):
             continue
         is_test = bool(TEST_PATH.search(path))
         if sign == "-" and is_test and ASSERT.search(text):
