@@ -26,7 +26,6 @@ void main() {
       'lib/src/widgets/adaptive_action_sheet.dart',
       'lib/src/widgets/adaptive_choice_picker.dart',
       'lib/src/widgets/adaptive_bottom_sheet.dart',
-      'lib/src/view/analysis/analysis_hub_screen.dart',
       'lib/src/view/analysis/analysis_screen.dart',
       'lib/src/view/analysis/analysis_settings_screen.dart',
       'lib/src/view/analysis/analysis_share_screen.dart',

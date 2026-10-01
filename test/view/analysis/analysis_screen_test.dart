@@ -13,9 +13,9 @@ import 'package:chess_srs/src/model/settings/board_preferences.dart';
 import 'package:chess_srs/src/model/settings/preferences_storage.dart';
 import 'package:chess_srs/src/network/http.dart';
 import 'package:chess_srs/src/network/socket.dart';
-import 'package:chess_srs/src/view/analysis/analysis_hub_screen.dart';
 import 'package:chess_srs/src/view/analysis/analysis_layout.dart';
 import 'package:chess_srs/src/view/analysis/analysis_screen.dart';
+import 'package:chess_srs/src/view/board_editor/board_editor_screen.dart';
 import 'package:chess_srs/src/view/engine/engine_button.dart';
 import 'package:chess_srs/src/view/engine/engine_gauge.dart';
 import 'package:chess_srs/src/view/engine/engine_lines.dart';
@@ -1418,10 +1418,9 @@ void main() {
       }
     });
     testWidgets('saves and restores root and path when navigating away and back', (tester) async {
-      // reach the board analysis through the Explore hub
       final app = await makeTestProviderScopeApp(
         tester,
-        home: const AnalysisHubScreen(),
+        home: const _TestAnalysisLauncher(),
         defaultPreferences: {
           PrefCategory.engineEvaluation.storageKey: jsonEncode(
             EngineEvaluationPrefState.defaults.copyWith(isEnabled: false).toJson(),
@@ -1463,14 +1462,12 @@ void main() {
       expect(boardHasPiece(tester, Square.a3, Piece.blackKing), isTrue);
       expect(boardHasPiece(tester, Square.g3, Piece.whiteKing), isFalse);
 
-      // Navigate back to the hub
-      await tester.tap(
-        find.descendant(of: find.byType(SrsPageHead), matching: find.text('Review')),
-      );
+      // Navigate back to the launcher
+      Navigator.of(tester.element(find.byType(AnalysisScreen))).pop();
       await tester.pumpAndSettle();
 
-      // Verify we're back at the hub
-      expect(find.byType(AnalysisHubScreen), findsOneWidget);
+      // Verify we're back at the launcher
+      expect(find.byType(_TestAnalysisLauncher), findsOneWidget);
 
       // Navigate to board analysis again
       await tester.tap(find.text('Analysis board'));
@@ -1487,10 +1484,9 @@ void main() {
       expect(boardHasPiece(tester, Square.g3, Piece.whiteKing), isFalse);
     });
     testWidgets('Clear moves clears standalone analysis', (tester) async {
-      // Open from More tab and navigate to board analysis
       final app = await makeTestProviderScopeApp(
         tester,
-        home: const AnalysisHubScreen(),
+        home: const _TestAnalysisLauncher(),
         defaultPreferences: {
           PrefCategory.engineEvaluation.storageKey: jsonEncode(
             EngineEvaluationPrefState.defaults.copyWith(isEnabled: false).toJson(),
@@ -1530,14 +1526,12 @@ void main() {
       expect(find.textContaining('e4'), findsNothing);
       expect(boardHasPiece(tester, Square.e4, Piece.whitePawn), isFalse);
 
-      // Navigate back to the hub
-      await tester.tap(
-        find.descendant(of: find.byType(SrsPageHead), matching: find.text('Review')),
-      );
+      // Navigate back to the launcher
+      Navigator.of(tester.element(find.byType(AnalysisScreen))).pop();
       await tester.pumpAndSettle();
 
-      // Verify we're back at the hub
-      expect(find.byType(AnalysisHubScreen), findsOneWidget);
+      // Verify we're back at the launcher
+      expect(find.byType(_TestAnalysisLauncher), findsOneWidget);
 
       // Navigate to board analysis again
       await tester.tap(find.text('Analysis board'));
@@ -1551,10 +1545,9 @@ void main() {
     testWidgets('Opening a position from board editor overwrites saved standalone analysis', (
       tester,
     ) async {
-      // Open from More tab and navigate to board analysis
       final app = await makeTestProviderScopeApp(
         tester,
-        home: const AnalysisHubScreen(),
+        home: const _TestAnalysisLauncher(),
         defaultPreferences: {
           PrefCategory.engineEvaluation.storageKey: jsonEncode(
             EngineEvaluationPrefState.defaults.copyWith(isEnabled: false).toJson(),
@@ -1577,14 +1570,12 @@ void main() {
       expect(find.textContaining('f4'), findsOneWidget);
       expect(boardHasPiece(tester, Square.f4, Piece.whitePawn), isTrue);
 
-      // Navigate back to the hub
-      await tester.tap(
-        find.descendant(of: find.byType(SrsPageHead), matching: find.text('Review')),
-      );
+      // Navigate back to the launcher
+      Navigator.of(tester.element(find.byType(AnalysisScreen))).pop();
       await tester.pumpAndSettle();
 
-      // Verify we're back at the hub
-      expect(find.byType(AnalysisHubScreen), findsOneWidget);
+      // Verify we're back at the launcher
+      expect(find.byType(_TestAnalysisLauncher), findsOneWidget);
 
       // Navigate to board editor
       await tester.tap(find.text('Board editor'));
@@ -1605,6 +1596,44 @@ void main() {
       expect(boardHasPiece(tester, Square.f4, Piece.whitePawn), isFalse);
     });
   });
+}
+
+class _TestAnalysisLauncher extends StatelessWidget {
+  const _TestAnalysisLauncher();
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            TextButton(
+              onPressed: () => Navigator.of(context).push(
+                AnalysisScreen.buildRoute(
+                  const AnalysisOptions.standalone(
+                    variant: Variant.standard,
+                    orientation: Side.white,
+                  ),
+                ),
+              ),
+              child: const Text('Analysis board'),
+            ),
+            TextButton(
+              onPressed: () => Navigator.of(context).push(
+                BoardEditorScreen.buildRoute((
+                  initialVariant: Variant.standard,
+                  initialFen: null,
+                  initialOrientation: Side.white,
+                )),
+              ),
+              child: const Text('Board editor'),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 const gameResponse = '''

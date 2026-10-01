@@ -1,7 +1,6 @@
 // Copyright (C) 2024 ChessSRS contributors
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-import 'package:chess_srs/src/view/analysis/analysis_hub_screen.dart';
 import 'package:chess_srs/src/view/review/library_sheet.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_ui/material_ui.dart';
@@ -46,14 +45,6 @@ void main() {
         isNot(contains(destination)),
         reason: '"$destination" is not in the library sheet',
       );
-    }
-  });
-
-  testWidgets('the hub offers each destination the sheet used to', (tester) async {
-    final hub = await rowLabels(tester, const AnalysisHubScreen());
-
-    for (final destination in destinations) {
-      expect(hub, contains(destination), reason: 'the hub must reach $destination');
     }
   });
 

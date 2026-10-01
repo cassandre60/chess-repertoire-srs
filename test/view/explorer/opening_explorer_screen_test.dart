@@ -11,7 +11,7 @@ import 'package:chess_srs/src/model/explorer/opening_explorer_preferences.dart';
 import 'package:chess_srs/src/model/settings/preferences_storage.dart';
 import 'package:chess_srs/src/model/user/user.dart';
 import 'package:chess_srs/src/network/http.dart';
-import 'package:chess_srs/src/view/analysis/analysis_hub_screen.dart';
+import 'package:chess_srs/src/view/analysis/analysis_screen.dart';
 import 'package:chess_srs/src/view/explorer/opening_explorer_screen.dart';
 import 'package:chess_srs/src/widgets/move_list.dart';
 import 'package:dartchess/dartchess.dart';
@@ -245,7 +245,39 @@ void main() {
     testWidgets('opening explorer does not use standalone analysis', (WidgetTester tester) async {
       final app = await makeTestProviderScopeApp(
         tester,
-        home: const AnalysisHubScreen(),
+        home: Builder(
+          builder: (context) => Scaffold(
+            body: Column(
+              children: [
+                TextButton(
+                  onPressed: () => Navigator.of(context).push(
+                    AnalysisScreen.buildRoute(
+                      const AnalysisOptions.standalone(
+                        variant: Variant.standard,
+                        orientation: Side.white,
+                      ),
+                    ),
+                  ),
+                  child: const Text('Analysis board'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(context).push(
+                    OpeningExplorerScreen.buildRoute(
+                      const AnalysisOptions.pgn(
+                        id: StringId('review_position_explorer'),
+                        orientation: Side.white,
+                        pgn: '',
+                        isComputerAnalysisAllowed: false,
+                        variant: Variant.standard,
+                      ),
+                    ),
+                  ),
+                  child: const Text('Opening explorer'),
+                ),
+              ],
+            ),
+          ),
+        ),
         overrides: {
           httpClientFactoryProvider: httpClientFactoryProvider.overrideWith((ref) {
             return FakeHttpClientFactory(() => mockClient);
@@ -261,11 +293,9 @@ void main() {
       await playMove(tester, 'e2', 'e4');
       expect(boardHasPiece(tester, Square.e4, Piece.whitePawn), isTrue);
 
-      // Go back to the hub and open the opening explorer
-      await tester.tap(
-        find.descendant(of: find.byType(SrsPageHead), matching: find.text('Review')),
-      );
-      await tester.pump();
+      // Go back and open the opening explorer
+      Navigator.of(tester.element(find.byType(AnalysisScreen))).pop();
+      await tester.pumpAndSettle();
 
       await tester.tap(find.text('Opening explorer'));
       await tester.pumpAndSettle(); // wait for opening explorer screen to open
