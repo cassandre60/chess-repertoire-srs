@@ -4,8 +4,11 @@
 # it cannot: that no PR quietly redefines what "passing" means.
 #
 # Design notes:
-# - Gate scripts always run from the TRUSTED base checkout (../trusted), never
-#   from the PR tree, so a PR cannot tamper with its own judges.
+# - Gate scripts run from the TRUSTED base checkout (../trusted), never from
+#   the PR tree, so a PR cannot tamper with its own judges. The one exception
+#   is the bootstrap PR that introduces the gates: the base has no scripts
+#   yet, so the workflow falls back to the PR tree with a visible warning and
+#   judges under owner review (G07 still flags every referee edit there).
 # - `docs/**` (except SPEC/GATES/strategy docs, which are named explicitly) is
 #   deliberately absent from the paths filter: a change touching only prose
 #   docs skips CI, preserving the cheap docs lane documented in AGENTS.md.
@@ -70,9 +73,20 @@ jobs:
           path: trusted
           fetch-depth: 0
 
+      - name: Locate gate scripts (trusted base copy; PR tree on bootstrap)
+        working-directory: pr
+        run: |
+          if [ -f ../trusted/scripts/gates/banned_apis_check.py ]; then
+            echo "TRUSTED=../trusted" >> "$GITHUB_ENV"
+            echo "using trusted base copy of the gate scripts"
+          else
+            echo "TRUSTED=." >> "$GITHUB_ENV"
+            echo "::warning::trusted gate scripts absent on base (bootstrap PR); judging with the PR tree under owner review"
+          fi
+
       - name: G03 banned APIs in core
         working-directory: pr
-        run: python3 ../trusted/scripts/gates/banned_apis_check.py --config ../trusted/.gates/banned-apis.json --root .
+        run: python3 "$TRUSTED/scripts/gates/banned_apis_check.py" --config "$TRUSTED/.gates/banned-apis.json" --root .
 
       - name: G07 protected paths (referee edits need approval)
         working-directory: pr
@@ -81,23 +95,23 @@ jobs:
           if [ "${{ contains(github.event.pull_request.labels.*.name, 'gate-approved') }}" = "true" ]; then
             APPROVAL="--approved"
           fi
-          python3 ../trusted/scripts/gates/protected_paths_check.py \
-            --base origin/${{ github.base_ref }} --patterns ../trusted/.gates/protected-paths.txt $APPROVAL
+          python3 "$TRUSTED/scripts/gates/protected_paths_check.py" \
+            --base origin/${{ github.base_ref }} --patterns "$TRUSTED/.gates/protected-paths.txt" $APPROVAL
 
       - name: G08 test-weakening tripwire
         working-directory: pr
-        run: python3 ../trusted/scripts/gates/test_weakening_check.py --base origin/${{ github.base_ref }}
+        run: python3 "$TRUSTED/scripts/gates/test_weakening_check.py" --base origin/${{ github.base_ref }}
 
       - name: G05 spec traceability
         working-directory: pr
-        run: python3 ../trusted/scripts/gates/spec_trace_check.py --spec ../trusted/SPEC.md --tests test
+        run: python3 "$TRUSTED/scripts/gates/spec_trace_check.py" --spec "$TRUSTED/SPEC.md" --tests test
 
       - name: G10 ratchets
         working-directory: pr
         run: |
-          python3 ../trusted/scripts/gates/collect_metrics.py --out metrics.json
-          python3 ../trusted/scripts/gates/ratchet_check.py \
-            --baseline ../trusted/.gates/ratchet-baseline.json --current metrics.json
+          python3 "$TRUSTED/scripts/gates/collect_metrics.py" --out metrics.json
+          python3 "$TRUSTED/scripts/gates/ratchet_check.py" \
+            --baseline "$TRUSTED/.gates/ratchet-baseline.json" --current metrics.json
 
   nightly:
     name: T3 red-team recall
