@@ -1,6 +1,5 @@
 import 'dart:convert';
 
-import 'package:chess_srs/src/domain/chapter.dart' as domain;
 import 'package:chess_srs/src/import/pgn_exporter.dart';
 import 'package:chess_srs/src/model/analysis/analysis_summary.dart';
 import 'package:chess_srs/src/model/common/chess.dart';
@@ -74,58 +73,65 @@ class StudyRepository {
     required StudyId id,
     StudyChapterId? chapterId,
   }) async {
-    final srsRepo = await ref.read(srsStudyRepositoryProvider.future);
-    final localStudy = await srsRepo.getStudy(id.value);
-    if (localStudy != null) {
-      final chapters = await srsRepo.getChaptersByStudy(localStudy.id);
-      if (chapters.isNotEmpty) {
-        final currentChapter = chapterId != null
-            ? (chapters.firstWhereOrNull((c) => c.id == chapterId.value) ?? chapters.first)
-            : chapters.first;
-        final root = await srsRepo.getPositionTree(currentChapter.id);
-        final fullChapter = currentChapter.copyWith(root: root);
-        final pgn = chapterToPgn(fullChapter, studyTitle: localStudy.title);
+    final srsRepoAsync = ref.read(srsStudyRepositoryProvider);
+    final srsRepo = srsRepoAsync.asData?.value;
+    if (srsRepo != null) {
+      try {
+        final localStudy = await srsRepo.getStudy(id.value);
+        if (localStudy != null) {
+          final chapters = await srsRepo.getChaptersByStudy(localStudy.id);
+          if (chapters.isNotEmpty) {
+            final currentChapter = chapterId != null
+                ? (chapters.firstWhereOrNull((c) => c.id == chapterId.value) ?? chapters.first)
+                : chapters.first;
+            final root = await srsRepo.getPositionTree(currentChapter.id);
+            final fullChapter = currentChapter.copyWith(root: root);
+            final pgn = chapterToPgn(fullChapter, studyTitle: localStudy.title);
 
-        final chapterMetas = chapters
-            .mapIndexed(
-              (index, ch) => StudyChapterMeta(
-                id: StudyChapterId(ch.id),
-                name: ch.title ?? 'Chapter ${index + 1}',
-                fen: ch.startingFen,
+            final chapterMetas = chapters
+                .mapIndexed(
+                  (index, ch) => StudyChapterMeta(
+                    id: StudyChapterId(ch.id),
+                    name: ch.title ?? 'Chapter ${index + 1}',
+                    fen: ch.startingFen,
+                  ),
+                )
+                .toIList();
+
+            final studyChapter = StudyChapter(
+              id: StudyChapterId(currentChapter.id),
+              setup: StudyChapterSetup(
+                id: null,
+                orientation: currentChapter.orientation,
+                variant: Variant.standard,
+                fromFen: currentChapter.startingFen != null,
               ),
-            )
-            .toIList();
+              practise: false,
+              conceal: null,
+              gamebook: false,
+              features: (computer: true, explorer: true),
+            );
 
-        final studyChapter = StudyChapter(
-          id: StudyChapterId(currentChapter.id),
-          setup: StudyChapterSetup(
-            id: null,
-            orientation: currentChapter.orientation,
-            variant: Variant.standard,
-            fromFen: currentChapter.startingFen != null,
-          ),
-          practise: false,
-          conceal: null,
-          gamebook: false,
-          features: (computer: true, explorer: true),
-        );
+            final study = Study(
+              id: id,
+              name: localStudy.title,
+              liked: false,
+              likes: 0,
+              ownerId: null,
+              features: (cloneable: false, chat: false, sticky: false),
+              topics: const IListConst([]),
+              chapters: chapterMetas,
+              chapter: studyChapter,
+              members: const IMapConst({}),
+              hints: const IListConst([]),
+              deviationComments: const IListConst([]),
+            );
 
-        final study = Study(
-          id: id,
-          name: localStudy.title,
-          liked: false,
-          likes: 0,
-          ownerId: null,
-          features: (cloneable: false, chat: false, sticky: false),
-          topics: const IListConst([]),
-          chapters: chapterMetas,
-          chapter: studyChapter,
-          members: const IMapConst({}),
-          hints: const IListConst([]),
-          deviationComments: const IListConst([]),
-        );
-
-        return (study, null, pgn);
+            return (study, null, pgn);
+          }
+        }
+      } catch (_) {
+        // Fall back to network
       }
     }
 
@@ -150,18 +156,6 @@ class StudyRepository {
   }
 
   Future<String> getStudyPgn(StudyId id, {String host = 'lichess.org'}) async {
-    final srsRepo = await ref.read(srsStudyRepositoryProvider.future);
-    final localStudy = await srsRepo.getStudy(id.value);
-    if (localStudy != null) {
-      final chapters = await srsRepo.getChaptersByStudy(localStudy.id);
-      final chaptersWithRoots = <domain.Chapter>[];
-      for (final ch in chapters) {
-        final root = await srsRepo.getPositionTree(ch.id);
-        chaptersWithRoots.add(ch.copyWith(root: root));
-      }
-      return studyToPgn(localStudy, chaptersWithRoots);
-    }
-
     final pgnBytes = await client.readBytes(
       Uri.https(host, '/api/study/$id.pgn'),
       headers: {'Accept': 'application/x-chess-pgn'},
