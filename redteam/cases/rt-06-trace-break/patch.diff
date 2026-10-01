@@ -1,11 +1,11 @@
-diff --git a/test/domain/review_scope_test.dart b/test/domain/review_scope_test.dart
-index d3f9f4cca..86ea4bd50 100644
---- a/test/domain/review_scope_test.dart
-+++ b/test/domain/review_scope_test.dart
+diff --git a/test/review/move_latency_test.dart b/test/review/move_latency_test.dart
+index 7058c4053..d23f6f078 100644
+--- a/test/review/move_latency_test.dart
++++ b/test/review/move_latency_test.dart
 @@ -1,6 +1,5 @@
  // Copyright (C) 2024 ChessSRS contributors
  // SPDX-License-Identifier: GPL-3.0-or-later
--// SPEC coverage: INV-030.
+-// SPEC coverage: INV-050.
  
- import 'package:chess_srs/src/domain/review/review_scope.dart';
- import 'package:flutter_test/flutter_test.dart';
+ import 'dart:io';
+ 
