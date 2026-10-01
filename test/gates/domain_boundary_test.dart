@@ -38,7 +38,7 @@ final _bannedImports = <RegExp>[
 ];
 
 /// A wall-clock read outside a doc reference.
-final _wallClock = RegExp('DateTime.now');
+final _wallClock = RegExp(r'DateTime\.now');
 final _docReference = RegExp(r'\[DateTime\.now\]');
 
 List<File> _domainFiles() {
@@ -89,7 +89,9 @@ void main() {
         final lines = file.readAsLinesSync();
         for (var i = 0; i < lines.length; i++) {
           final line = lines[i];
-          if (line.contains("dart:io") || line.contains('package:http') || line.contains('HttpClient')) {
+          if (line.contains('dart:io') ||
+              line.contains('package:http') ||
+              line.contains('HttpClient')) {
             violations.add('${file.path}:${i + 1}: ${line.trim()}');
           }
         }
