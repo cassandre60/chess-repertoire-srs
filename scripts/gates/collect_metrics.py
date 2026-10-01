@@ -14,6 +14,10 @@ import re
 import sys
 
 SKIP_DIRS = {".git", ".dart_tool", "build", ".fvm", "node_modules", "__pycache__"}
+# Generated files are gitignored but present after codegen; they carry
+# machine-written ignores. The analyzer config excludes them too, so the
+# metric follows the same definition and stays stable either way.
+GENERATED_SUFFIXES = (".freezed.dart", ".g.dart", ".mocks.dart")
 
 
 def dart_files(root, *tops):
@@ -25,7 +29,7 @@ def dart_files(root, *tops):
         for dp, dns, fns in os.walk(base):
             dns[:] = [d for d in dns if d not in SKIP_DIRS]
             for fn in fns:
-                if fn.endswith(".dart"):
+                if fn.endswith(".dart") and not fn.endswith(GENERATED_SUFFIXES):
                     out.append(os.path.join(dp, fn))
     return sorted(out)
 
