@@ -657,6 +657,7 @@ void main() {
       );
 
       state = container.read(reviewControllerProvider).requireValue;
+      expect(state.currentPrompt, isNotNull);
       final incoming = state.currentPrompt!.incomingMove;
       expect(incoming, isNotNull);
 
