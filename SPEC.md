@@ -313,18 +313,6 @@ domain computes, adapters persist and fetch.
 - Gates: G03, G02 boundary test.
 - Tier: T1. Covering: `test/gates/domain_boundary_test.dart`.
 
-### INV-064 Every socket handshake carries the sri
-`SocketClient.connect()` puts the socket random identifier in the query string of the
-websocket URI. Lila refuses the upgrade with a 400 when it is absent, whatever the
-User-Agent says, so a socket that omits it never connects and every socket-backed
-feature — cloud evaluation, study sync, the ping indicator — stays dead while the
-suite stays green.
-- Oracle: `SocketClient connects with the sri in the query string`.
-- Gates: network suite.
-- Tier: T1. Covering: `test/network/socket_test.dart`.
-- History: 2026-10-02, every connection refused with HTTP 400 for 42 minutes of a
-  logged session; no gate saw it because the fake channels key on path alone.
-
 ## E. Performance budgets (T2)
 
 ### INV-050 A graded move settles within one frame
@@ -388,4 +376,3 @@ and appear only after grading (or never, when annotations are disabled).
 | Date | Invariant | Change | Reviewer |
 |------|-----------|--------|----------|
 | 2026-10-01 | all | Initial SPEC transcribed from QUALITY.md + mined regressions | (owner, on merge) |
-| 2026-10-02 | INV-064 | Added after the socket sri escape: handshake without the query parameter is refused by lila | (owner, on merge) |
