@@ -282,6 +282,32 @@ remains a later option — never a redesign.
       3. **Do not re-investigate:** `_emailRegExp`, `AuthRepository`, `AuthController` and `UserRepository.usernameExists` are byte-identical to upstream, so none of the above was a defect in them. No Lichess client accepts a password, so "user + password" is not implementable. Full chain with the ruled-out suspects: `docs/open-email-login-handoff.md`.
       4. **Email-code login is now the mobile path only** and remains unverified against production, since no device was attached. Desktop sign-in goes through OAuth and is verified. Reopen this item only if someone runs it on Android or iOS.
 
+### Open — gate defects found 2026-10-02 (each needs its own gate-change PR)
+- [ ] **G-BASEINV: G05 judges a PR's test citations against the base ref, so no PR can add a SPEC invariant** *(opened: 2026-10-02)*
+      1. `gates.yml` runs `spec_trace_check.py --spec "$TRUSTED/SPEC.md" --tests test`: the spec comes from the base checkout, only the tests from the PR. Cite-without-invariant gives "Tests cite IDs missing from the spec"; invariant-without-cite gives "Invariants with no test"; both in one PR still fails, because the spec side is the base's copy.
+      2. **Consequence:** `docs/ESCAPE_TO_GATE.md` steps 4 and 5 cannot be satisfied, so the escape flywheel records nothing. Confirmed on PR #130, where CI printed `39 invariants in spec, 39 referenced by tests` and then `Tests cite IDs missing from the spec: INV-064`.
+      3. **Do not re-investigate by running the script locally:** against the working tree it reads the PR's own `SPEC.md` and passes, so it cannot reproduce this. Reproduce with the base ref's copy.
+      4. **Fix direction (owner's call):** judge citations against the PR's `SPEC.md` while keeping coverage against the base, or pass `--allow-uncovered` for IDs the same PR introduces. Both change CI config, which is protected.
+      5. This is what left the socket-`sri` escape (#129) recorded as a `GATES.md` row only, with no invariant.
+
+- [ ] **G-LABELEVENT: adding `gate-approved` never re-runs the gate** *(opened: 2026-10-02)*
+      1. `gates.yml` declares `on: pull_request:` with only `paths:`, so the trigger types are the defaults (`opened`, `synchronize`, `reopened`). Labelling fires no event at all.
+      2. `gh run rerun` does not help either: it replays the original event payload, which predates the label, so `APPROVAL` stayed empty and G07 failed again. Seen on PR #130 — the job only passed `--approved` after the PR was closed and reopened.
+      3. **Fix direction:** add `types: [opened, synchronize, reopened, labeled]`, or stop reading labels from the event payload and read them from the API at run time.
+
+### Open — awaiting verification (not blocking the MVP)
+- [ ] **F-CLOUDEVAL: exercise cloud Stockfish evaluation with a live socket** *(opened: 2026-10-02)*
+      1. Never exercised: every handshake was refused with HTTP 400 until #129, so `/analysis/socket/v5` and its `evalGet` had no connection for the entire life of the app.
+      2. Low risk by construction — `evaluation_mixin.dart` starts the local engine as a backstop and only gives the cloud a head start, so a non-Premium account loses cloud evals and nothing else. Worth one run before anyone reports it broken.
+
+- [ ] **F-STUDYPERSIST: does a remote study edit reach the local database?** *(opened: 2026-10-02)*
+      1. `StudyController.handleSocketEvent` applies lila's `promote` / `deleteNode` / `anaMove` / `anaDrop` to the in-memory `_root`, then calls `_refreshTreeView()`. What was **not** checked is whether that reaches SQLite, or whether the edit lives in memory until a reload.
+      2. Only reachable by editing a study on lichess.org while the app has that chapter open. Not reachable from a headless run.
+
+- [ ] **F-MOBILELOGIN: email-code sign-in on a real device** *(opened: 2026-10-02)*
+      1. Desktop sign-in goes through loopback OAuth (#125) and is verified; the mobile-code path is not, because no device was attached.
+      2. This is the only path that exercises #123's query-parameter fallback on `/auth/mobile-code/email` and `/bearer`. Needs an Android or iOS device against `lichess.org`, now the default host — no `--dart-define`.
+
 Workflow polish, information architecture, performance, onboarding/import
 improvements, remaining Lichess code removal (per CUT_PROPOSALS §2), and only
 then differentiation features justified by specs or beta feedback.
