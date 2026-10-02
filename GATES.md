@@ -56,7 +56,8 @@ spec coverage of intent, and check strength.
 ## Escapes log
 | Date | What escaped | Root cause | New gate / invariant / red-team case |
 |------|--------------|------------|--------------------------------------|
-| (none recorded since gates introduced 2026-10-01) | | | |
+| (none recorded since gates introduced 2026-10-01) | | |
+| 2026-10-02 | Every lichess socket handshake was refused with HTTP 400, so cloud evaluation, study sync and the ping indicator were dead while the suite stayed green | The fake channels key on path alone, so no test could see that the sri was missing from the connect URL, and no fast gate reads a wire format | INV-064; red-team case deferred — its catcher is the unit-test suite, while the T3 recall runs `gates.sh t1` only, so the case needs a wire-contract fast gate first | |
 
 Adding a row? Follow `docs/ESCAPE_TO_GATE.md` — the row is step 7 of the
 escape loop, after the regression test, SPEC invariant, and red-team case.
