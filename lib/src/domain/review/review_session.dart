@@ -132,8 +132,8 @@ class ReviewSession {
       }
 
       // By-line order (INV-066): same urgency-selected set, presented walking
-      // study, then chapter source order, then tree order. Stable sort keeps
-      // due-date order for ties, so equally placed cards stay most-due-first.
+      // study, chapter source order, tree order. Stable sort keeps due-date
+      // order for ties.
       if (order == ReviewOrder.byLine) {
         final studyIndex = <String, int>{for (var i = 0; i < studies.length; i++) studies[i].id: i};
         final nodeOrder = <String, int>{};
@@ -164,11 +164,10 @@ class ReviewSession {
   final ReviewScope scope;
   final ReviewMode mode;
 
-  /// Presentation order of the due queue. The due set never depends on this.
+  /// Presentation order of the due queue; the due set never depends on this.
   final ReviewOrder order;
 
-  /// Whether off-line-but-book moves are accepted (INV-065). Off keeps
-  /// strict expected-line grading.
+  /// Off-line-but-book moves accepted (INV-065); off keeps strict grading.
   final bool transposeAccept;
   final Scheduler scheduler;
   final Clock clock;
@@ -298,8 +297,7 @@ class ReviewSession {
     var expectedMatch = prompt.expectedMoves.where((exp) => exp.matches(movePlayed)).firstOrNull;
     RepertoireNode? transposedStart;
     if (expectedMatch == null && transposeAccept) {
-      // Transposition (INV-065): book from another in-scope line. The
-      // incoming move carries the contextual SAN; its UCI is the move played.
+      // Transposition (INV-065): book from another in-scope line, graded via its incoming move.
       final target = _findTransposedNode(prompt, movePlayed);
       final incoming = target?.incomingMove;
       if (incoming != null && incoming.matches(movePlayed)) {
@@ -501,8 +499,7 @@ class ReviewSession {
     final now = clock.now();
     final autoPlayed = <AutoPlayedMove>[];
     final sideEffects = <ReviewState>[];
-    // A transposed acceptance starts the traversal from the reached line;
-    // otherwise it starts from the played child of the drilled position.
+    // A transposed acceptance traverses from the reached line instead.
     var activeNode = startNode ?? _findChildForMove(prompt.currentNode, expectedMatch);
 
     while (activeNode != null) {
@@ -722,17 +719,12 @@ class ReviewSession {
     }
   }
 
-  /// Transposition acceptance (P-TRANSPOSE, INV-065): the played move matches
-  /// no expected continuation here, but the position it reaches exists in the
-  /// active scope's repertoire tree. Returns that node, or null.
-  ///
-  /// The drilled decision is still graded correct; only the continuation
-  /// jumps to the transposed line. Illegal moves, targets outside the scope,
-  /// and targets without a repertoire move of their own fail closed to null,
-  /// preserving ordinary incorrect handling exactly.
+  /// Transposition acceptance (P-TRANSPOSE, INV-065): returns the in-scope
+  /// node at the position the played move reaches, or null. Illegal moves,
+  /// out-of-scope targets, and targets without their own repertoire move
+  /// fail closed, preserving ordinary incorrect handling exactly.
   RepertoireNode? _findTransposedNode(ReviewPrompt prompt, RepertoireMove movePlayed) {
-    // Position identity is the 4-field FEN (QUALITY.md §2.3). Recomputed
-    // here rather than imported: the domain layer owns no FEN helpers.
+    // 4-field FEN identity (QUALITY.md §2.3), recomputed: domain owns no FEN helpers.
     Position position;
     try {
       position = Chess.fromSetup(Setup.parseFen(prompt.fen));
@@ -766,9 +758,7 @@ class ReviewSession {
       final incoming = node.incomingMove;
       if (incoming == null || !incoming.matches(movePlayed)) continue;
       final chapter = _chapters[_chapterOfNode[node.id]];
-      final study = chapter == null ? null : _studies[chapter.studyId];
       if (chapter == null ||
-          study == null ||
           !scope.matches(
             studyId: chapter.studyId,
             chapterId: chapter.id,
