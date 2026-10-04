@@ -38,6 +38,7 @@ class ReviewSession {
     this.scope = const ReviewScope.all(),
     this.mode = ReviewMode.srs,
     this.order = ReviewOrder.dueDate,
+    this.transposeAccept = true,
     this.scheduler = const SimpleScheduler(),
     this.clock = const SystemClock(),
     this.prefetchBatchSize = 25,
@@ -165,6 +166,10 @@ class ReviewSession {
 
   /// Presentation order of the due queue. The due set never depends on this.
   final ReviewOrder order;
+
+  /// Whether off-line-but-book moves are accepted (INV-065). Off keeps
+  /// strict expected-line grading.
+  final bool transposeAccept;
   final Scheduler scheduler;
   final Clock clock;
   final Random _random;
@@ -292,7 +297,7 @@ class ReviewSession {
     final movePlayed = RepertoireMove(from: from, to: to, promotion: promotion);
     var expectedMatch = prompt.expectedMoves.where((exp) => exp.matches(movePlayed)).firstOrNull;
     RepertoireNode? transposedStart;
-    if (expectedMatch == null) {
+    if (expectedMatch == null && transposeAccept) {
       // Transposition (INV-065): book from another in-scope line. The
       // incoming move carries the contextual SAN; its UCI is the move played.
       final target = _findTransposedNode(prompt, movePlayed);
@@ -445,7 +450,7 @@ class ReviewSession {
     final movePlayed = RepertoireMove(from: from, to: to, promotion: promotion);
     var expectedMatch = prompt.expectedMoves.where((exp) => exp.matches(movePlayed)).firstOrNull;
     RepertoireNode? transposedStart;
-    if (expectedMatch == null) {
+    if (expectedMatch == null && transposeAccept) {
       final target = _findTransposedNode(prompt, movePlayed);
       final incoming = target?.incomingMove;
       if (incoming != null && incoming.matches(movePlayed)) {
