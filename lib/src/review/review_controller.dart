@@ -831,6 +831,7 @@ class ReviewController extends AsyncNotifier<ReviewScreenState> {
     final studyProgressMap = Map<String, RepertoireProgress>.from(currentState.studyProgress);
     final chapterProgressMap = Map<String, RepertoireProgress>.from(currentState.chapterProgress);
     final openingProgressMap = Map<String, RepertoireProgress>.from(currentState.openingProgress);
+    final sideProgressMap = Map<Side, RepertoireProgress>.from(currentState.sideProgress);
     final currentChapterId = currentState.currentPrompt!.chapterId;
     if (isFirstAttempt) {
       final isNewlyLearned =
@@ -870,6 +871,22 @@ class ReviewController extends AsyncNotifier<ReviewScreenState> {
           );
         }
       }
+      // The side the answer belonged to, not the side to move: a decision is stored against the
+      // repertoire's own orientation, so decrementing "the side now on the board" would move the
+      // wrong button's tally. Read it from the chapter, the same place the scope match does.
+      final currentSide = currentChapter?.orientation;
+      if (currentSide != null) {
+        final sideProg = sideProgressMap[currentSide];
+        if (sideProg != null) {
+          sideProgressMap[currentSide] = RepertoireProgress(
+            totalDecisions: sideProg.totalDecisions,
+            learnedDecisions: isNewlyLearned
+                ? (sideProg.learnedDecisions + 1).clamp(0, sideProg.totalDecisions)
+                : sideProg.learnedDecisions,
+            dueDecisions: (sideProg.dueDecisions - 1).clamp(0, sideProg.totalDecisions),
+          );
+        }
+      }
     }
 
     // Counted on completion, not on a first-try success. A position answered right only after a
@@ -888,6 +905,7 @@ class ReviewController extends AsyncNotifier<ReviewScreenState> {
         studyProgress: studyProgressMap,
         chapterProgress: chapterProgressMap,
         openingProgress: openingProgressMap,
+        sideProgress: sideProgressMap,
         session: session,
         currentPrompt: nextPrompt,
         clearPrompt: nextPrompt == null,
