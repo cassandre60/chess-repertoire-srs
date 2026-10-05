@@ -81,9 +81,7 @@ class _StudyScreenLoader extends ConsumerWidget {
                             .toBoardSettings(Variant.standard, srsColors: srsColors)
                             .copyWith(
                               borderRadius: borderRadius,
-                              boxShadow: borderRadius != null
-                                  ? boardShadows
-                                  : const <BoxShadow>[],
+                              boxShadow: borderRadius != null ? boardShadows : const <BoxShadow>[],
                             );
                         final board = StaticChessboard(
                           size: boardSize,
@@ -128,9 +126,7 @@ class _StudyScreenLoader extends ConsumerWidget {
                             .toBoardSettings(Variant.standard, srsColors: srsColors)
                             .copyWith(
                               borderRadius: borderRadius,
-                              boxShadow: borderRadius != null
-                                  ? boardShadows
-                                  : const <BoxShadow>[],
+                              boxShadow: borderRadius != null ? boardShadows : const <BoxShadow>[],
                             );
                         final board = StaticChessboard(
                           size: boardSize,
@@ -242,7 +238,9 @@ class _StudyScreenState extends ConsumerState<_StudyScreen> with TickerProviderS
                 ),
               ),
             ),
-            Expanded(child: _Body(options: widget.options, tabController: _tabController, tabs: tabs)),
+            Expanded(
+              child: _Body(options: widget.options, tabController: _tabController, tabs: tabs),
+            ),
           ],
         ),
       ),
@@ -260,10 +258,8 @@ class _StudyMenu extends ConsumerWidget {
     return SrsIconButton(
       icon: Icons.more_horiz,
       tooltip: 'Study menu',
-      onPressed: () => showSrsSheet<void>(
-        context,
-        SrsSheetSurface(child: _StudyMenuSheet(options: options)),
-      ),
+      onPressed: () =>
+          showSrsSheet<void>(context, SrsSheetSurface(child: _StudyMenuSheet(options: options))),
     );
   }
 }
@@ -329,18 +325,18 @@ class _StudyMenuSheet extends ConsumerWidget {
               if (authUser != null)
                 SrsSheetRow(
                   label: state.study.liked ? 'Stop liking' : context.l10n.studyLike,
-                  onPressed: () =>
-                      ref.read(studyControllerProvider(options).notifier).toggleLike(),
+                  onPressed: () => ref.read(studyControllerProvider(options).notifier).toggleLike(),
                 ),
               SrsSheetRow(
                 label: context.l10n.studyStudyUrl,
-                onPressed: () =>
-                    share(ShareParams(uri: lichessUri('/study/${state.study.id}'))),
+                onPressed: () => share(ShareParams(uri: lichessUri('/study/${state.study.id}'))),
               ),
               SrsSheetRow(
                 label: context.l10n.studyCurrentChapterUrl,
                 onPressed: () => share(
-                  ShareParams(uri: lichessUri('/study/${state.study.id}/${state.study.chapter.id}')),
+                  ShareParams(
+                    uri: lichessUri('/study/${state.study.id}/${state.study.chapter.id}'),
+                  ),
                 ),
               ),
               if (!state.gamebookActive) ...[
@@ -377,9 +373,7 @@ class _StudyMenuSheet extends ConsumerWidget {
                     () => ref
                         .read(gameShareServiceProvider)
                         .chapterGif(state.study.id, state.study.chapter.id),
-                    subject: context.l10n.studyChapterX(
-                      state.study.currentChapterMeta.name,
-                    ),
+                    subject: context.l10n.studyChapterX(state.study.currentChapterMeta.name),
                     failureMessage: 'Failed to get GIF',
                   ),
                 ),
