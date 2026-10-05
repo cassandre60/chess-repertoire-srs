@@ -810,10 +810,7 @@ void main() {
 
       // Scoped to the sheet: the status panel owns a side-to-move segmented of its own.
       final sheet = find.byKey(SrsSheetSurface.surfaceKey);
-      expect(
-        find.descendant(of: sheet, matching: find.byType(SrsSegmented<Side>)),
-        findsOneWidget,
-      );
+      expect(find.descendant(of: sheet, matching: find.byType(SrsSegmented<Side>)), findsOneWidget);
       expect(find.byType(ChoiceChip), findsNothing);
 
       // Toggling a castling wing through the switch flips the right. The tap goes to
@@ -824,9 +821,7 @@ void main() {
       final controller = boardEditorControllerProvider(params);
       expect(container.read(controller).isCastlingAllowed(Side.white, CastlingSide.king), isTrue);
       final whiteKing = tester
-          .widgetList<SrsSwitch>(
-            find.descendant(of: sheet, matching: find.byType(SrsSwitch)),
-          )
+          .widgetList<SrsSwitch>(find.descendant(of: sheet, matching: find.byType(SrsSwitch)))
           .firstWhere((s) => s.semanticLabel == 'White O-O');
       await tester.tap(find.byWidget(whiteKing));
       await tester.pumpAndSettle();
