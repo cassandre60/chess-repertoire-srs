@@ -56,6 +56,7 @@ class ReviewScreenState {
     this.studyProgress = const {},
     this.chapterProgress = const {},
     this.openingProgress = const {},
+    this.sideProgress = const {},
     this.lastStepResult,
     this.dailyReviewedCount = 0,
     this.maxDailyReviews = 100,
@@ -69,6 +70,15 @@ class ReviewScreenState {
   final Map<String, RepertoireProgress> studyProgress;
   final Map<String, RepertoireProgress> chapterProgress;
   final Map<String, RepertoireProgress> openingProgress;
+
+  /// Progress over the chapters trained from each side, keyed by [Side].
+  ///
+  /// Read from [ReviewService.getDueSummary] rather than derived here: the
+  /// service already walks every decision with its chapter's orientation in
+  /// hand, so a second derivation in the controller would be a second pass over
+  /// the same table to produce a number the first pass could have produced.
+  final Map<Side, RepertoireProgress> sideProgress;
+
   final ReviewSession? session;
   final ReviewPrompt? currentPrompt;
   final Position? boardPosition;
@@ -172,6 +182,7 @@ class ReviewScreenState {
     Map<String, RepertoireProgress>? studyProgress,
     Map<String, RepertoireProgress>? chapterProgress,
     Map<String, RepertoireProgress>? openingProgress,
+    Map<Side, RepertoireProgress>? sideProgress,
     ReviewSession? session,
     ReviewPrompt? currentPrompt,
     bool clearPrompt = false,
@@ -201,6 +212,7 @@ class ReviewScreenState {
       studyProgress: studyProgress ?? this.studyProgress,
       chapterProgress: chapterProgress ?? this.chapterProgress,
       openingProgress: openingProgress ?? this.openingProgress,
+      sideProgress: sideProgress ?? this.sideProgress,
       session: session ?? this.session,
       currentPrompt: clearPrompt ? null : (currentPrompt ?? this.currentPrompt),
       boardPosition: boardPosition ?? this.boardPosition,
@@ -384,6 +396,7 @@ class ReviewController extends AsyncNotifier<ReviewScreenState> {
         studyProgress: summary.studyProgress,
         chapterProgress: summary.chapterProgress,
         openingProgress: summary.openingProgress,
+        sideProgress: summary.sideProgress,
         dailyReviewedCount: dailyReviewedCount,
         maxDailyReviews: maxDailyReviews,
       );
@@ -447,6 +460,7 @@ class ReviewController extends AsyncNotifier<ReviewScreenState> {
       studyProgress: summary.studyProgress,
       chapterProgress: summary.chapterProgress,
       openingProgress: summary.openingProgress,
+      sideProgress: summary.sideProgress,
       dailyReviewedCount: dailyReviewedCount,
       maxDailyReviews: maxDailyReviews,
       session: session,
@@ -553,6 +567,7 @@ class ReviewController extends AsyncNotifier<ReviewScreenState> {
         studyProgress: summary.studyProgress,
         chapterProgress: summary.chapterProgress,
         openingProgress: summary.openingProgress,
+        sideProgress: summary.sideProgress,
         session: newSession,
         currentPrompt: newPrompt,
         clearPrompt: newPrompt == null,
@@ -616,6 +631,7 @@ class ReviewController extends AsyncNotifier<ReviewScreenState> {
             studyProgress: summary.studyProgress,
             chapterProgress: summary.chapterProgress,
             openingProgress: summary.openingProgress,
+            sideProgress: summary.sideProgress,
             session: newSession,
             currentPrompt: prompt,
             clearPrompt: prompt == null,
