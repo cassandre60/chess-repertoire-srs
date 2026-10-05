@@ -370,7 +370,7 @@ class _StudyChaptersMenuState extends ConsumerState<_StudyChaptersMenu> {
                 for (final chapter in state.study.chapters)
                   SrsSettingsRow(
                     key: chapter.id == state.currentChapter.id ? currentChapterKey : null,
-                    label: '${state.study.getChapterIndex(chapter.id) + 1} · ${chapter.name}',
+                    label: '${state.study.getChapterIndex(chapter.id) + 1} ${chapter.name}',
                     selected: chapter.id == state.currentChapter.id,
                     onTap: () {
                       ref
