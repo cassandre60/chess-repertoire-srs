@@ -56,6 +56,7 @@ class ReviewScreenState {
     this.studyProgress = const {},
     this.chapterProgress = const {},
     this.openingProgress = const {},
+    this.studyOrientations = const {},
     this.lastStepResult,
     this.dailyReviewedCount = 0,
     this.maxDailyReviews = 100,
@@ -69,6 +70,7 @@ class ReviewScreenState {
   final Map<String, RepertoireProgress> studyProgress;
   final Map<String, RepertoireProgress> chapterProgress;
   final Map<String, RepertoireProgress> openingProgress;
+  final Map<String, Side> studyOrientations;
   final ReviewSession? session;
   final ReviewPrompt? currentPrompt;
   final Position? boardPosition;
@@ -172,6 +174,7 @@ class ReviewScreenState {
     Map<String, RepertoireProgress>? studyProgress,
     Map<String, RepertoireProgress>? chapterProgress,
     Map<String, RepertoireProgress>? openingProgress,
+    Map<String, Side>? studyOrientations,
     ReviewSession? session,
     ReviewPrompt? currentPrompt,
     bool clearPrompt = false,
@@ -201,6 +204,7 @@ class ReviewScreenState {
       studyProgress: studyProgress ?? this.studyProgress,
       chapterProgress: chapterProgress ?? this.chapterProgress,
       openingProgress: openingProgress ?? this.openingProgress,
+      studyOrientations: studyOrientations ?? this.studyOrientations,
       session: session ?? this.session,
       currentPrompt: clearPrompt ? null : (currentPrompt ?? this.currentPrompt),
       boardPosition: boardPosition ?? this.boardPosition,
@@ -352,6 +356,19 @@ class ReviewController extends AsyncNotifier<ReviewScreenState> {
     }
   }
 
+  /// Computes the orientation map for all studies by checking their first chapter.
+  Future<Map<String, Side>> _computeStudyOrientations(List<Study> studies) async {
+    final orientations = <String, Side>{};
+    for (final study in studies) {
+      final chapters = await _repository.getChaptersByStudy(study.id);
+      if (chapters.isNotEmpty) {
+        // Use the orientation of the first chapter as the study's orientation
+        orientations[study.id] = chapters.first.orientation;
+      }
+    }
+    return orientations;
+  }
+
   /// Returns null when [generation] has been superseded, in which case the caller must not
   /// publish what it was loading.
   Future<ReviewScreenState?> _loadState({
@@ -366,6 +383,7 @@ class ReviewController extends AsyncNotifier<ReviewScreenState> {
     final remainingQuota = _remainingQuotaFor(mode, dailyReviewedCount);
 
     final studies = await _repository.getAllStudies();
+    final studyOrientations = await _computeStudyOrientations(studies);
     final summary = await _service.getDueSummary(
       studies: studies,
       scope: scope,
@@ -384,6 +402,7 @@ class ReviewController extends AsyncNotifier<ReviewScreenState> {
         studyProgress: summary.studyProgress,
         chapterProgress: summary.chapterProgress,
         openingProgress: summary.openingProgress,
+        studyOrientations: const {},
         dailyReviewedCount: dailyReviewedCount,
         maxDailyReviews: maxDailyReviews,
       );
@@ -447,6 +466,7 @@ class ReviewController extends AsyncNotifier<ReviewScreenState> {
       studyProgress: summary.studyProgress,
       chapterProgress: summary.chapterProgress,
       openingProgress: summary.openingProgress,
+      studyOrientations: studyOrientations,
       dailyReviewedCount: dailyReviewedCount,
       maxDailyReviews: maxDailyReviews,
       session: session,
@@ -625,6 +645,33 @@ class ReviewController extends AsyncNotifier<ReviewScreenState> {
         );
       }
     }
+  }
+
+  /// Creates a new study with colors flipped for all chapters.
+  ///
+  /// Exports the study to PGN, flips the orientation in the PGN headers,
+  /// and re-imports it as a new study with a "(Black)" or "(White)" suffix.
+  /// The new study starts with fresh SRS data (no knowledge states are copied).
+  Future<ImportResult?> flipStudyColors(String studyId) async {
+    final study = await _repository.getStudy(studyId);
+    if (study == null) return null;
+
+    final chapters = await _repository.getChaptersByStudy(studyId);
+    if (chapters.isEmpty) return null;
+
+    // Determine the opposite side
+    final currentSide = chapters.first.orientation;
+    final oppositeSide = currentSide == Side.white ? Side.black : Side.white;
+    final sideSuffix = oppositeSide == Side.black ? ' (Black)' : ' (White)';
+
+    // Generate PGN with flipped orientation
+    final pgn = studyToPgn(study, chapters);
+
+    // Create new title with side indicator
+    final newTitle = '${study.title}$sideSuffix';
+
+    // Re-import with the opposite side
+    return await importPgnText(pgnText: pgn, title: newTitle, repertoireSide: oppositeSide);
   }
 
   /// Exports all chapters of [studyId] to standard PGN string for explore/analysis mode.
