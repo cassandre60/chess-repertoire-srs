@@ -4,7 +4,6 @@ import 'package:chess_srs/src/design/design.dart';
 import 'package:chess_srs/src/model/common/id.dart';
 import 'package:chess_srs/src/network/http.dart';
 import 'package:chess_srs/src/view/study/create_study_chapter_bottom_sheet.dart';
-import 'package:chess_srs/src/widgets/feedback.dart';
 import 'package:dartchess/dartchess.dart';
 import 'package:fast_immutable_collections/fast_immutable_collections.dart';
 import 'package:flutter/material.dart';
