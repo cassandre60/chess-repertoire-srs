@@ -26,11 +26,14 @@ class ReviewScopeDrawer extends ConsumerStatefulWidget {
   /// Label for the side-scoped scope, as the top bar names it too.
   ///
   /// Lives here rather than beside [_computeScopeTitle] because the drawer's two
-  /// buttons and the top bar have to say the same thing: a scope the user
+  /// menus and the top bar have to say the same thing: a scope the user
   /// picked from the drawer whose name changes when it is shown elsewhere reads
   /// as two different scopes.
+  static const String whiteRepertoireLabel = 'White repertoire';
+  static const String blackRepertoireLabel = 'Black repertoire';
+
   static String sideLabel(Side side) =>
-      side == Side.white ? _SideScopeButton._whiteLabel : _SideScopeButton._blackLabel;
+      side == Side.white ? whiteRepertoireLabel : blackRepertoireLabel;
 
   /// Displays the scope selector sheet.
   static Future<void> show(BuildContext context) {
@@ -126,8 +129,10 @@ class _ReviewScopeDrawerState extends ConsumerState<ReviewScopeDrawer> {
     // The scope rows are labelled `White repertoire` / `Black repertoire`, so a
     // query naming either one keeps that menu visible; everything else hides
     // both scope rows while its studies still filter by title below.
-    final showWhiteMenu = query.isEmpty || 'white repertoire'.contains(query);
-    final showBlackMenu = query.isEmpty || 'black repertoire'.contains(query);
+    final showWhiteMenu =
+        query.isEmpty || ReviewScopeDrawer.whiteRepertoireLabel.toLowerCase().contains(query);
+    final showBlackMenu =
+        query.isEmpty || ReviewScopeDrawer.blackRepertoireLabel.toLowerCase().contains(query);
     // While searching, every match shows regardless of collapse: the query,
     // not the persisted state, decides what is visible.
     final searching = query.isNotEmpty;
@@ -698,7 +703,7 @@ class _RepertoireMenu extends StatelessWidget {
   final void Function(Study study) onSelectStudy;
   final void Function(Study study, Rect? anchor) onShowStudyActions;
 
-  String get label => side == Side.white ? 'White repertoire' : 'Black repertoire';
+  String get label => ReviewScopeDrawer.sideLabel(side);
 
   @override
   Widget build(BuildContext context) {
