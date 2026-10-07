@@ -17,7 +17,8 @@ class AboutPage extends ConsumerWidget {
   const AboutPage({super.key});
 
   static const lichessMobileUrl = 'https://github.com/lichess-org/mobile';
-  static const chessSrsUrl = 'https://github.com/mansourvery-hub/chess-repertoire-srs';
+  static const chessSrsUrl =
+      'https://github.com/cassandre60/chess-repertoire-srs';
 
   static const _attributions = [
     ('Lichess Mobile', 'GPL-3.0'),
@@ -44,7 +45,10 @@ class AboutPage extends ConsumerWidget {
       body: SafeArea(
         child: Column(
           children: [
-            SrsPageHead(label: 'About', onBack: () => Navigator.of(context).maybePop()),
+            SrsPageHead(
+              label: 'About',
+              onBack: () => Navigator.of(context).maybePop(),
+            ),
             Expanded(
               child: SingleChildScrollView(
                 child: Center(
@@ -76,15 +80,25 @@ class AboutPage extends ConsumerWidget {
                         const SizedBox(height: 14),
                         Text(
                           'Version ${version ?? '…'}. Based on Lichess Mobile (GPL-3.0).',
-                          style: TextStyle(fontFamily: SrsText.ui, fontSize: 16, color: c.ink2),
+                          style: TextStyle(
+                            fontFamily: SrsText.ui,
+                            fontSize: 16,
+                            color: c.ink2,
+                          ),
                         ),
                         const SizedBox(height: 18),
                         Wrap(
                           spacing: 22,
                           runSpacing: 8,
                           children: [
-                            _Link(label: 'Lichess Mobile source', uri: Uri.parse(lichessMobileUrl)),
-                            _Link(label: 'ChessSRS source', uri: Uri.parse(chessSrsUrl)),
+                            _Link(
+                              label: 'Lichess Mobile source',
+                              uri: Uri.parse(lichessMobileUrl),
+                            ),
+                            _Link(
+                              label: 'ChessSRS source',
+                              uri: Uri.parse(chessSrsUrl),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 30),
@@ -92,7 +106,9 @@ class AboutPage extends ConsumerWidget {
                           Container(
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             decoration: BoxDecoration(
-                              border: Border(top: BorderSide(color: c.hairlineSoft)),
+                              border: Border(
+                                top: BorderSide(color: c.hairlineSoft),
+                              ),
                             ),
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
